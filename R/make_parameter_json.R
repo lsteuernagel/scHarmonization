@@ -27,6 +27,16 @@ param_list$assay_name = "RNA"
 param_list$scvi_models_to_test = 30 # depends on the number of the models in scvi arg list
 param_list$latent_space_sizes = c(50,65,80,95,110,140)
 # TODO
+## scvi params
+# n_layers = int(parameter_dict["n_layers"])
+# n_latent = int(parameter_dict["n_latent"])
+# n_hidden = int(parameter_dict["n_hidden"])
+# dropout_rate = float(parameter_dict["dropout_rate"])
+# max_epochs = int(parameter_dict["max_epochs"])
+# early_stopping = bool(parameter_dict["early_stopping"])
+# dispersion = str(parameter_dict["dispersion"])
+# gene_likelihood = str(parameter_dict["gene_likelihood"])
+# feature_set_size
 
 # evaluation:
 param_list$ntrees_mixing = 20000

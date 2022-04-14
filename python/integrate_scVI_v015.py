@@ -58,18 +58,12 @@ str_df = adata.var
 str_df = str_df.applymap(lambda x: x.decode() if isinstance(x, bytes) else x)
 str_df = str_df.set_index('features',drop=False)
 adata.var = str_df
+# additionally requires the 
 
 # read json into dictionary
 json_file = open(feature_set_file)
 hvg_dict = json.load(json_file)
 hvgs = hvg_dict[hvgs_set_name] # add in hvgs variable
-
-# print("Subset anndata to selected featureset:"+str(hvgs_set_name))
-# feature_set_files = [f for f in listdir(filepath_sets) if isfile(join(filepath_sets, f))]
-# feature_set_files = [i for i in feature_set_files if hvgs_set_name in i]
-# file = feature_set_files[0] # expects only 1 so just use first (should be only) entry
-# mydf = pd.read_csv(filepath_sets+file,skip_blank_lines=True)
-# hvgs = mydf.iloc[:,0].to_numpy().tolist() # add in hvgs variable
 
 # scVI needs raw data and so we subset X to .raw and then relevant features
 print("Copy raw into .X")
@@ -104,33 +98,42 @@ adata_scvi = adata.copy()
 scvi.model.SCVI.setup_anndata(adata_scvi, categorical_covariate_keys=categorical_covariates,continuous_covariate_keys=continuous_covariates)
 
 # for all parameter combinations
-for index, row in param_df.iterrows():
-    print("Running "+str(index+1)+" of "+str(len(param_df.index))+" scVI runs")
-    # set up VAE
-    vae = scvi.model.SCVI(adata_scvi,
-        n_layers=int(row['n_layers']),
-        n_latent=int(row['n_latent']),
-        n_hidden=int(row['n_hidden']),
-        dropout_rate=float(row['dropout_rate']),
-        dispersion = str(row['dispersion']),
-        gene_likelihood = str(row['gene_likelihood'])
-        #use_cuda=use_cuda
-    )
+print("Run scVI")
+  # set up VAE
+vae = scvi.model.SCVI(adata_scvi,
+    n_layers=int(parameter_dict['n_layers']),
+    n_latent=int(parameter_dict['n_latent']),
+    n_hidden=int(parameter_dict['n_hidden']),
+    dropout_rate=float(parameter_dict['dropout_rate']),
+    dispersion = str(parameter_dict['dispersion']),
+    gene_likelihood = str(parameter_dict['gene_likelihood'])
+    #use_cuda=use_cuda
+)
+# train
+vae.train(max_epochs=int(parameter_dict['max_epochs']), early_stopping = bool(parameter_dict['early_stopping']), use_gpu = use_cuda)
+# get result
+adata_scvi.obsm["X_scVI"] = vae.get_latent_representation()
+output = pd.DataFrame(adata_scvi.obsm["X_scVI"])
+output = output.set_index(adata_scvi.obs_names)
+output2 = output.set_axis(["scVI_" + str(s) for s in output.axes[1].to_list()], axis=1, inplace=False)
+# save
+output2.to_csv(results_path+"scVI_"+str(index)+"_"+str(int(parameter_dict['max_epochs']))+"_"+
+               str(float(parameter_dict['dropout_rate']))+"_"+str(int(parameter_dict['n_layers']))+"_"+
+               str(int(parameter_dict['n_hidden']))+"_"+str(parameter_dict['dispersion'])+"_"+str(parameter_dict['gene_likelihood'])+"_cov"+str(length_cov)+
+               "..scVI.."+str(int(parameter_dict['n_latent']))+".."+hvgs_set_name+"_"+job_id+".txt", sep='\t',index=True)
+               
+print("Store corrected counts")
+# get corrected counts result
+# https://docs.scvi-tools.org/en/stable/api/reference/scvi.model.SCVI.get_normalized_expression.html#scvi.model.SCVI.get_normalized_expression
+norm_counts = vae.get_normalized_expression(library_size=10e4)
+norm_counts.to_csv(results_path+"scVI_corrected.txt", sep='\t',index=True)
+    
+print("Store trained model")
+# https://docs.scvi-tools.org/en/stable/api/reference/scvi.model.SCVI.save.html#scvi.model.SCVI.save
+vae.save(results_path+"scVI_model", overwrite=True, save_anndata=False)
 
-    # train
-    vae.train(max_epochs=int(row['max_epochs']), early_stopping = bool(row['early_stopping']), use_gpu = use_cuda)
-    # get result
-    adata_scvi.obsm["X_scVI"] = vae.get_latent_representation()
-    output = pd.DataFrame(adata_scvi.obsm["X_scVI"])
-    output = output.set_index(adata_scvi.obs_names)
-    output2 = output.set_axis(["scVI_" + str(s) for s in output.axes[1].to_list()], axis=1, inplace=False)
-    # save
-    output2.to_csv(results_path+"scVI_"+str(index)+"_"+str(int(row['max_epochs']))+"_"+
-                  str(float(row['dropout_rate']))+"_"+str(int(row['n_layers']))+"_"+
-                  str(int(row['n_hidden']))+"_"+str(row['dispersion'])+"_"+str(row['gene_likelihood'])+"_cov"+str(length_cov)+
-                  "..scVI.."+str(int(row['n_latent']))+".."+hvgs_set_name+"_"+job_id+".txt", sep='\t',index=True)
-    # clean up
-    gc.collect()
+# clean up
+gc.collect()
                   
 ## End of for
 print("Finalized scVI runs")

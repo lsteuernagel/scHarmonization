@@ -6,9 +6,12 @@ Harmonize annotations and other information for an integrated single cell datase
 
 Steps:
 
-- Run scVI to integrate the merged dataset using use-spcfied parameters (use scIntegration to find a set of optimal parameters)
-- Create a SNN (Seurat) on integrated result
-  - Run UMAP (and save model)
+- Prepare input dataset (export to anndata etc.)
+- Run scVI to integrate the merged dataset using use-specfied parameters (use scIntegration to find a set of optimal parameters)
+- Create harmonized seurat
+  - Read results from scVI and create a new object
+  - Calculate a SNN (Seurat) on integrated result
+  - Run UMAP (and save model in object)
 - Run clustering on SNN of integrated result
   - general option: run one round / repeat until a certain numer of clusters is reached
   - [HypoMap]: Run multiple runs and combine to hierarchical tree using [mrtree](https://github.com/pengminshi/MRtree)
