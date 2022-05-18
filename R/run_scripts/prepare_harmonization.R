@@ -25,6 +25,31 @@ seurat_merged = readRDS(paste0(parameter_list$merged_file))
 seurat_metadata = seurat_merged@meta.data
 data.table::fwrite(x = seurat_metadata,file = paste0(parameter_list$harmonization_folder_path,paste0(parameter_list$new_name_suffix,"_metadata.txt")),sep = "\t")
 
+
+##########
+### Run feature detection
+##########
+
+message(" Add variable features ")
+
+# normalize data
+merged_seurat <- Seurat::NormalizeData(object = merged_seurat,  verbose = F, assay = "RNA")
+
+# find HVGs
+merged_seurat = scUtils::identify_variable_features(merged_seurat,
+                                                    n_hvgs_sizes = parameter_list$feature_set_size,
+                                                    batch_var = parameter_list$batch_var,
+                                                    assay_name = parameter_list$assay_name,
+                                                    method = "vst",
+                                                    ignore_genes_vector = features_exclude_list,
+                                                    returnSeurat = TRUE,
+                                                    seed = parameter_list$global_seed)
+feature_set = merged_seurat@misc$var_features[[1]]
+
+# save:
+scUtils::writeList_to_JSON(feature_sets,filename = paste0(parameter_list$feature_set_file)
+
+
 ##########
 ### Export to anndata
 ##########

@@ -32,7 +32,8 @@ job_id=parameter_dict["job_id"]
 batch_var=parameter_dict["batch_var"]
 data_filepath_full = parameter_dict["data_filepath_full"]
 feature_set_file = parameter_dict["feature_set_file"]
-results_path = parameter_dict["output_folder"]
+results_path = parameter_dict["harmonization_folder_path"]
+new_name_suffix = parameter_dict["new_name_suffix"]
 global_seed = parameter_dict["global_seed"]
 hvgs_set_name = parameter_dict["hvgs_set_name"]
 param_path = parameter_dict["param_path"]
@@ -62,8 +63,8 @@ adata.var = str_df
 
 # read json into dictionary
 json_file = open(feature_set_file)
-hvg_dict = json.load(json_file)
-hvgs = hvg_dict[hvgs_set_name] # add in hvgs variable
+hvgs = json.load(json_file)
+#hvgs = hvg_dict[hvgs_set_name] # add in hvgs variable
 
 # scVI needs raw data and so we subset X to .raw and then relevant features
 print("Copy raw into .X")
@@ -117,19 +118,17 @@ output = pd.DataFrame(adata_scvi.obsm["X_scVI"])
 output = output.set_index(adata_scvi.obs_names)
 output2 = output.set_axis(["scVI_" + str(s) for s in output.axes[1].to_list()], axis=1, inplace=False)
 # save
-output2.to_csv(results_path+"scVI_"+str(int(parameter_dict['max_epochs']))+"_"+
-               str(float(parameter_dict['dropout_rate']))+"_"+str(int(parameter_dict['n_layers']))+"_"+
-               str(int(parameter_dict['n_hidden']))+"_"+str(parameter_dict['dispersion'])+"_"+str(parameter_dict['gene_likelihood'])+".txt", sep='\t',index=True)
+output2.to_csv(results_path+new_name_suffix+"_scVI_reduction.txt", sep='\t',index=True)
                
 print("Store corrected counts")
 # get corrected counts result
 # https://docs.scvi-tools.org/en/stable/api/reference/scvi.model.SCVI.get_normalized_expression.html#scvi.model.SCVI.get_normalized_expression
 norm_counts = vae.get_normalized_expression(library_size=10e4)
-norm_counts.to_csv(results_path+"scVI_corrected.txt", sep='\t',index=True)
+norm_counts.to_csv(results_path+new_name_suffix+"_scVI_corrected.txt", sep='\t',index=True)
     
 print("Store trained model")
 # https://docs.scvi-tools.org/en/stable/api/reference/scvi.model.SCVI.save.html#scvi.model.SCVI.save
-vae.save(results_path+"scVI_model", overwrite=True, save_anndata=False)
+vae.save(results_path+new_name_suffix+"_scVI_model", overwrite=True, save_anndata=False)
 
 # clean up
 gc.collect()

@@ -83,19 +83,40 @@ output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",err
 slurm_id_1 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
 ##########
-### [2] Basic harmonization using the scVI harmonization
+### [2] Basic harmonization
 ##########
 
 
 
 ##########
-### [3] Initial clustering
+### [3] Initial clustering using python leiden
 ##########
 
 
 
 ##########
 ### [4] Initial marker detection
+##########
+
+
+##########
+### [5] Manual curation
+##########
+
+
+
+##########
+### [6] Hierachical tree
+##########
+
+
+##########
+### [7] Hierachical tree cluster markers + pruning
+##########
+
+
+##########
+### [8] Hierachical tree cluster markers re-run
 ##########
 
 

@@ -8,7 +8,7 @@ param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuer
 #param_list$processed_suffix = "_seurat_processed"
 
 # for final merged object:
-param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
+param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_downsampled_example.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
 param_list$new_name_suffix = "hypoMap_harmonized"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
 
 # signature for evaluation
@@ -20,35 +20,27 @@ param_list$id_column = "Cell_ID"
 param_list$global_seed = 123456
 param_list$sample_column = "Sample_ID"
 param_list$batch_var = "Batch_ID"
-param_list$feature_set_sizes = c(750,1000,1250,1500,2000,2500,3000)
+param_list$feature_set_sizes = c(3000)
+param_list$feature_set_file = paste0(param_list$harmonization_folder_path,"feature_set.json")
 param_list$assay_name = "RNA"
+param_list$integration_name = "scvi"
 
 # scvi integration:
-param_list$scvi_models_to_test = 30 # depends on the number of the models in scvi arg list
-param_list$latent_space_sizes = c(50,65,80,95,110,140)
-# TODO
-## scvi params
-# n_layers = int(parameter_dict["n_layers"])
-# n_latent = int(parameter_dict["n_latent"])
-# n_hidden = int(parameter_dict["n_hidden"])
-# dropout_rate = float(parameter_dict["dropout_rate"])
-# max_epochs = int(parameter_dict["max_epochs"])
-# early_stopping = bool(parameter_dict["early_stopping"])
-# dispersion = str(parameter_dict["dispersion"])
-# gene_likelihood = str(parameter_dict["gene_likelihood"])
-# feature_set_size
+param_list$n_layers = 3
+param_list$n_latent = 85
+param_list$n_hidden = 256
+param_list$dropout_rate = 0.1
+param_list$max_epochs = 100
+param_list$early_stopping = FALSE
+param_list$dispersion = "gene"
+param_list$gene_likelihood = "zinb"
 
-# evaluation:
-param_list$ntrees_mixing = 20000
-param_list$sampsize_pct = 0.3333
-param_list$max_for_norm = 0.01
-param_list$k_param = 20
-param_list$dist_type = "cosine"
-## asw
-param_list$subset_cells = TRUE
-param_list$target_clusterN = 200
-param_list$start_res_asw = 5
-param_list$end_res_asw = 15
+## general harmonization
+k_param = 30
+dist_type="cosine"
+
+## clustering
+
 
 # save
-scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_3.json")
+scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_1.json")
