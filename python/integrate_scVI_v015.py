@@ -117,10 +117,9 @@ output = pd.DataFrame(adata_scvi.obsm["X_scVI"])
 output = output.set_index(adata_scvi.obs_names)
 output2 = output.set_axis(["scVI_" + str(s) for s in output.axes[1].to_list()], axis=1, inplace=False)
 # save
-output2.to_csv(results_path+"scVI_"+str(index)+"_"+str(int(parameter_dict['max_epochs']))+"_"+
+output2.to_csv(results_path+"scVI_"+str(int(parameter_dict['max_epochs']))+"_"+
                str(float(parameter_dict['dropout_rate']))+"_"+str(int(parameter_dict['n_layers']))+"_"+
-               str(int(parameter_dict['n_hidden']))+"_"+str(parameter_dict['dispersion'])+"_"+str(parameter_dict['gene_likelihood'])+"_cov"+str(length_cov)+
-               "..scVI.."+str(int(parameter_dict['n_latent']))+".."+hvgs_set_name+"_"+job_id+".txt", sep='\t',index=True)
+               str(int(parameter_dict['n_hidden']))+"_"+str(parameter_dict['dispersion'])+"_"+str(parameter_dict['gene_likelihood'])+".txt", sep='\t',index=True)
                
 print("Store corrected counts")
 # get corrected counts result
