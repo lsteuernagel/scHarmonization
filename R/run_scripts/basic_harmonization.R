@@ -1,13 +1,13 @@
 ##########
 ### Load parameters and packages
 ##########
-message(" Load parameters and packages ")
+message(Sys.time(),": Load parameters and packages ")
 
 library(magrittr)
 library(scUtils)
 library(Seurat)
 
-source("R/harmonization_functions")
+source("R/harmonization_functions.R")
 
 # get params-filename from commandline
 command_args<-commandArgs(TRUE)
@@ -24,23 +24,30 @@ features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){
 # load seurat
 harmonized_seurat_object = readRDS(paste0(parameter_list$merged_file))
 
-#get metadata and save
-seurat_metadata = harmonized_seurat_object@meta.data
-data.table::fwrite(x = seurat_metadata,file = paste0(parameter_list$harmonization_folder_path,paste0(parameter_list$new_name_suffix,"_metadata.txt")),sep = "\t")
 
+##########
+### clean object
+##########
+
+harmonized_seurat_object@project.name = parameter_list$new_name_suffix
+harmonized_seurat_object@misc= list()
+harmonized_seurat_object@graphs= list()
+harmonized_seurat_object@reductions= list()
 
 ##########
 ### Raw data & new object
 ##########
 
 # put scvi imputed into another assay
-message("Adding counts as new assay from: ",parameter_list$corrected_counts_scvi)
-corrected_counts_scvi = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"scVI_corrected.txt"),data.table = F)
+message(Sys.time(),": Adding counts as new assay from: ",paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_scVI_corrected.txt"))
+
+corrected_counts_scvi = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_scVI_corrected.txt"),data.table = F)
 rownames(corrected_counts_scvi) = corrected_counts_scvi[,1]
 corrected_counts_scvi = t(as.matrix(corrected_counts_scvi[,2:ncol(corrected_counts_scvi)]))
 scvi_assay = CreateAssayObject(data=corrected_counts_scvi, min.cells = 0, min.features = 0)
+
 harmonized_seurat_object@assays[[paste0(parameter_list$integration_name,'_corrected')]] = scvi_assay
-harmonized_seurat_object@assays[[paste0(parameter_list$integration_name,'scvi_corrected')]]@key =paste0(parameter_list$integration_name,"_corrected")
+harmonized_seurat_object@assays[[paste0(parameter_list$integration_name,'_corrected')]]@key =paste0(parameter_list$integration_name,"_corrected")
 
 # # add hvgs
 # message("Adding variable feature names to assays")
@@ -53,9 +60,9 @@ harmonized_seurat_object@assays[[paste0(parameter_list$integration_name,'scvi_co
 ### Reductions
 ##########
 
-message("Adding integrated embedding and calculating default umap")
+message(Sys.time(),": Adding integrated embedding and calculating default umap")
 # add embedding manually
-current_embedding = read_embedding(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_scVI_reduction.txt")),harmonized_seurat_object)
+current_embedding = read_embedding(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_scVI_reduction.txt"),harmonized_seurat_object)
 
 # make dim red
 dimred <- Seurat::CreateDimReducObject(
@@ -73,7 +80,7 @@ harmonized_seurat_object@reductions[[parameter_list$integration_name]] = dimred
 ##########
 
 # run umap and save model
-message(Sys.time(),": Build UMAP..." )
+message(Sys.time(),": Build UMAP with ",parameter_list$k_param," n.neighbors ..." )
 harmonized_seurat_object = RunUMAP(harmonized_seurat_object,
                                    reduction = parameter_list$integration_name,
                                    seed.use= parameter_list$global_seed,
@@ -89,10 +96,13 @@ harmonized_seurat_object = RunUMAP(harmonized_seurat_object,
 ##########
 
 # run seurat SNN annoy
-message(Sys.time(),": Build SNN.." )
-seurat_object_harmonized = FindNeighbors(seurat_object_harmonized,reduction=reduction,dims = 1:ncol(harmonized_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
+message(Sys.time(),": Build SNN with ",parameter_list$k_param," n.neighbors ..." )
+harmonized_seurat_object = FindNeighbors(harmonized_seurat_object,
+                                         reduction=parameter_list$integration_name,
+                                         dims = 1:ncol(harmonized_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
                                          k.param = parameter_list$k_param,
-                                         nn.method="annoy",annoy.metric=parameter_list$dist_type,
+                                         nn.method="annoy",
+                                         annoy.metric=parameter_list$dist_type,
                                          graph.name = paste0("SNN_",parameter_list$integration_name), verbose=TRUE)
 
 
@@ -100,19 +110,18 @@ seurat_object_harmonized = FindNeighbors(seurat_object_harmonized,reduction=redu
 ### Save object
 ##########
 
+message(Sys.time(),": Save objects ..." )
+
 file_name_prefix = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix)
 
 # save data to rds
 saveRDS(harmonized_seurat_object,paste0(file_name_prefix,".rds"))
 
 # save h5seurat
-SeuratDisk::SaveH5Seurat(object = seurat_merged,filename = paste0(file_name_prefix,".h5seurat"), overwrite = TRUE, verbose = TRUE)
+SeuratDisk::SaveH5Seurat(object = harmonized_seurat_object,filename = paste0(file_name_prefix,".h5seurat"), overwrite = TRUE, verbose = TRUE)
 
 # save to anndata
 SeuratDisk::Convert( paste0(file_name_prefix,".h5seurat"), dest =  paste0(file_name_prefix,".h5ad"),assay="RNA",verbose=TRUE,overwrite=TRUE)
 system(paste0("rm ",paste0(file_name_prefix,".h5seurat")))
-
-# metadata
-#data.table::fwrite(harmonized_seurat_object@meta.data,file = paste0(parameter_list$harmonization_path,parameter_list$project_name,"_metadata.txt") ,sep="\t")
 
 message("Finalized basic seurat object harmonization.")

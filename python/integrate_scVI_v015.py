@@ -30,21 +30,17 @@ parameter_dict = json.loads(json_str)
 # general params from dict (could also save these lines, but I think this way it is easier to digest)
 job_id=parameter_dict["job_id"]
 batch_var=parameter_dict["batch_var"]
-data_filepath_full = parameter_dict["data_filepath_full"]
+data_filepath_full = parameter_dict["harmonization_folder_path"]+parameter_dict["new_name_suffix"]+".h5ad"
 feature_set_file = parameter_dict["feature_set_file"]
 results_path = parameter_dict["harmonization_folder_path"]
 new_name_suffix = parameter_dict["new_name_suffix"]
 global_seed = parameter_dict["global_seed"]
-hvgs_set_name = parameter_dict["hvgs_set_name"]
-param_path = parameter_dict["param_path"]
+#hvgs_set_name = parameter_dict["hvgs_set_name"]
 use_cuda = parameter_dict["use_cuda"]
 categorical_covariates = parameter_dict["categorical_covariates"]
 continuous_covariates = parameter_dict["continuous_covariates"]
 
 scvi.settings.seed = global_seed
-
-# read parameters for scVI
-param_df = pd.read_csv(param_path,sep="\t")
 
 # read RNA assay (RNA assay because scVI needs raw data)
 print("Read anndata")
@@ -78,19 +74,24 @@ gc.collect()
 # https://www.scvi-tools.org/en/stable/user_guide/notebooks/harmonization.html
 print("Preparing scVI")
 # if only 1 variable --> make list
-if not isinstance(categorical_covariates, list):
+
+#length_cov = len(categorical_covariates)+len(continuous_covariates)
+if len(categorical_covariates) == 0:
+    categorical_covariates = None
+else:
+  if not isinstance(categorical_covariates, list):
     categorical_covariates_save=categorical_covariates
     categorical_covariates = list()
     categorical_covariates.insert(0,categorical_covariates_save)
-if not isinstance(continuous_covariates, list):
+  
+if len(continuous_covariates) == 0:
+    continuous_covariates = None
+else:
+  if not isinstance(continuous_covariates, list):
     continuous_covariates_save=continuous_covariates
     continuous_covariates = list()
     continuous_covariates.insert(0,continuous_covariates_save)
-length_cov = len(categorical_covariates)+len(continuous_covariates)
-if len(categorical_covariates) == 0:
-    categorical_covariates = None
-if len(continuous_covariates) == 0:
-    continuous_covariates = None
+  
 print("categorical_covariate_keys: "+str(categorical_covariates))
 print("continuous_covariate_keys: "+str(continuous_covariates))
 adata_scvi = adata.copy()
