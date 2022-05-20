@@ -28,11 +28,16 @@ target_clusterN = parameter_dict["target_clusterN"]
 job_id = parameter_dict["job_id"]
 start_res = parameter_dict["start_res"]
 end_res = parameter_dict["end_res"]
+step_size = parameter_dict["step_size"]
+include_low_res = parameter_dict["include_low_res"]
 n_neighbors = parameter_dict["k_param"]
 snn_name = "SNN_"+parameter_dict["integration_name"]
 
 #define resolution range, hardcoded atm
-resolutions = [x*0.5 for x in range(2*start_res, 2*end_res+1)]
+resolutions = [round(x*step_size,3) for x in range(int(1/step_size)*start_res,int(1/step_size)*end_res+1)]
+if(include_low_res):
+  low_res_list = [0.1,0.25,0.5,0.75]
+  resolutions = low_res_list + resolutions
 
 # read adata
 adata = sc.read_h5ad(data_filepath_full)

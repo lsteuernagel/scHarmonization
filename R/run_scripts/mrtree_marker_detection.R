@@ -56,9 +56,168 @@ test.use = parameter_list$test.use
 message("test.use ",test.use," ... ",parameter_list$test.use)
 if(is.null(base)){base = 2}
 
+
+
+mrtree_object = readRDS(mrtree_object_filepath)
+
+edgelist = mrtree_object$edgelist[,1:2]
+labelmat = mrtree_object$labelmat
+
+##########
+### findMarkers_tree2
+##########
+
+#' Walk through a mrtree / hierchical clustering tree using an edgelist and calculate Marker genes using Seurat's FindMarkers or a stratified version:
+#' https://github.com/KChen-lab/stratified-tests-for-seurat
+#' Two results: Vs sibling and Vs all . Runs in parallel to be faster
+#' @param seurat_object seurat_object to call FindMarkers
+#' @param edgelist minimum number of cells to keep cluster
+#' @param labelmat
+#' @param n_cores doParallel cores
+#' @param use_stratified use stratfied
+#' @param batch_var batch_var for stratfied mode
+#' @param assay
+#' @param slot
+#' @param ...
+#' @return updated vector of labels
+
+findMarkers_tree2 = function(seurat_object,edgelist,labelmat,n_cores=1,use_stratified=TRUE,test.use="",batch_var="Batch_ID",assay="RNA",slot="data",...){
+  require(doParallel)
+  edgelist = edgelist[,c("from","to")]
+  message(n_cores)
+
+  # init
+  current_node="all"
+  colnames(edgelist) = c("from","to")
+  label_mat_long = as.data.frame(labelmat) %>% tidyr::pivot_longer(everything(),names_to = "clusterlevel", values_to = "cluster")
+  edgelist = dplyr::left_join(edgelist,label_mat_long,by=c("to"="cluster")) %>% dplyr::distinct(from,to,clusterlevel)
+  all_nodes = unique(edgelist[,2])
+  #all_nodes = all_nodes[!all_nodes %in% c("all","root")]
+
+  comparisons_siblings = NULL
+  comparisons_all = NULL
+
+  registerDoParallel(cores=n_cores)
+  message("Sibling Comparisons")
+  comparisons_siblings <- foreach(n = 1:length(all_nodes),.errorhandling = 'remove', .combine='rbind') %dopar% {
+    current_node = all_nodes[n]
+    parent_node = edgelist$from[edgelist$to==current_node]
+    sibling_nodes = edgelist$to[edgelist$from==parent_node & edgelist$to != current_node]
+    current_level = edgelist$clusterlevel[edgelist$to==current_node]
+    # set ident to current level!
+    Idents(seurat_object) = current_level
+
+    # calculate markers vs siblings
+    current_markers <- tryCatch({
+      cluster_1 = current_node
+      cluster_2 = sibling_nodes
+      if(test.use == "wilcox-stratified"){
+        current_markers =FindMarkers2.Seurat(seurat_object,
+                                             ident.1 = cluster_1,
+                                             ident.2 = cluster_2,
+                                             latent.vars = batch_var,
+                                             test.use = "VE",
+                                             genre = "locally-best",
+                                             assay =assay,
+                                             slot = slot,...)
+        #current_markers =FindMarkers2.Seurat(seurat_object, ident.1 = cluster_1,ident.2 = cluster_2, latent.vars = batch_var, test.use = "VE", genre = "locally-best",only.pos=TRUE,logfc.threshold=0.2,min.pct=0.1,min.diff.pct=0.1)
+      }else{
+        current_markers=FindMarkers(seurat_object,
+                                    ident.1 = cluster_1,
+                                    ident.2 = cluster_2,
+                                    assay =assay,
+                                    slot = slot,
+                                    test.use = test.use,...)
+      }
+      current_markers$gene = rownames(current_markers)
+      current_markers$cluster_1 = cluster_1
+      current_markers$comparison = "siblings"
+      current_markers$parent = parent_node
+      current_markers
+    },error=function(cond) {
+      message(cond)
+      # Choose a return value in case of error
+      return(NULL)
+    })
+
+    # return
+    current_markers
+  }
+  message("All Comparisons")
+  comparisons_all <- foreach(n = 1:length(all_nodes),.errorhandling = 'remove', .combine='rbind') %dopar% {
+    #for(n in 1:length(all_nodes)){
+    current_node = all_nodes[n]
+    parent_node = edgelist$from[edgelist$to==current_node]
+    sibling_nodes = edgelist$to[edgelist$from==parent_node & edgelist$to != current_node]
+    current_level = edgelist$clusterlevel[edgelist$to==current_node]
+    # set ident to current level!
+    Idents(seurat_object) = current_level
+
+    # calculate markers vs all
+    current_markers <- tryCatch({
+      cluster_1 = current_node
+      cluster_2 = all_nodes[! all_nodes %in% current_node]
+      #markers vs all
+      if(test.use == "wilcox-stratified"){
+        current_markers =FindMarkers2.Seurat(seurat_object,
+                                             ident.1 = cluster_1,
+                                             ident.2 = cluster_2,
+                                             latent.vars = batch_var,
+                                             test.use = "VE",
+                                             genre = "locally-best",
+                                             assay =assay,
+                                             slot = slot,...)
+      }else{
+        current_markers=FindMarkers(seurat_object,
+                                    ident.1 = cluster_1,
+                                    ident.2 = cluster_2,
+                                    assay =assay,
+                                    slot = slot,
+                                    test.use = test.use,...)
+      }
+      current_markers$gene = rownames(current_markers)
+      current_markers$cluster_1 = cluster_1
+      current_markers$comparison = "all"
+      current_markers$parent = parent_node
+      current_markers
+    },error=function(cond) {
+      message(cond)
+      # Choose a return value in case of error
+      return(NULL)
+    })
+
+    # return
+    current_markers
+  }
+  # return
+  return_list = list(comparisons_siblings=comparisons_siblings,comparisons_all=comparisons_all)
+  return(return_list)
+}
+
+
+
+##########
+### Calculate markers between leaf-siblings ?  and merge ?
+##########
+
+
+# TODO: needs to be able to only work with a subset of markers
+
+message(Sys.time(),": Start marker detection on mrtree" )
+all_markers_stratified = findMarkers_tree2(seurat_object_harmonized,edgelist=edgelist[,1:2],labelmat = labelmat,n_cores = n_cores_markers,
+                                           assay=assay_markers,slot=assay_slot,use_stratified=use_stratified,batch_var=batch_var,max.cells.per.ident = max.cells.per.ident,
+                                           only.pos=TRUE,logfc.threshold=logfc.threshold,min.pct=min.pct,min.diff.pct=min.diff.pct)
+
+comparisons_siblings = all_markers_stratified$comparisons_siblings
+comparisons_siblings$specificity = (comparisons_siblings$pct.1 / comparisons_siblings$pct.2) * comparisons_siblings$avg_logFC
+comparisons_all = all_markers_stratified$comparisons_all
+comparisons_all$specificity = (comparisons_all$pct.1 / comparisons_all$pct.2) * comparisons_all$avg_logFC
+
+
 ##########
 ### Calculate markers
 ##########
+
 
 message(Sys.time(),": Start marker detection" )
 Idents(harmonized_seurat_object) = cluster_column # set ident!!

@@ -42,10 +42,34 @@ param_list$use_cuda =FALSE
 param_list$k_param = 30
 param_list$dist_type="cosine"
 
-## clustering
-param_list$target_clusterN = 200
-param_list$start_res = 8
-param_list$end_res = 20
+## initial clustering
+param_list$target_clusterN_intial = 200
+param_list$start_res_intial = 8
+param_list$end_res_intial = 20
+param_list$step_size_intial = 1
+param_list$include_low_res_intial = F
+
+## full clustering
+param_list$target_clusterN = 400
+param_list$start_res = 1
+param_list$end_res = 30
+param_list$step_size = 1
+param_list$include_low_res = TRUE
+
+# basic marker detection
+param_list$basic_marker_filename = "_inital_markers"
+param_list$assay_markers ="RNA"
+param_list$assay_slot = "data"
+param_list$test.use = "wilcox-stratified" # either "wilcox-stratified" or a basic Seurat FindMarkers test
+param_list$logfc.threshold = 0.25
+param_list$min.pct = 0.1
+param_list$min.diff.pct = 0.05
+param_list$max.cells.per.ident = 20000
+param_list$min.cells.feature = 10
+param_list$min.cells.group =  10
+param_list$base = 2
+param_list$only.pos = TRUE
+param_list$batch_var = param_list$batch_var
 
 # save
 scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_1_test.json")

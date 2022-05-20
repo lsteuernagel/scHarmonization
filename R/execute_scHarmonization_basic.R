@@ -55,10 +55,6 @@ slurm_id_0 = stringr::str_remove(output_message,pattern = "Submitted batch job "
 
 # set additional parameters for scvi
 param_set = params_harmonization
-# param_set$output_folder = harmonization_scvi_folder
-# param_set$data_filepath_full = paste0(params_harmonization$harmonization_folder_path,param_set$new_name_suffix,".h5ad")
-# param_set$feature_set_file = paste0(params_harmonization$harmonization_folder_path,"features/feature_sets.json")
-# param_set$hvgs_set_name = paste0(params_harmonization$assay_name,".log.", "vst", ".split_", params_harmonization$batch_var, ".features.",params_harmonization$feature_set_size)
 
 # make unique id:
 job_id=digest::digest(param_set)
@@ -104,6 +100,12 @@ slurm_id_2 = stringr::str_remove(output_message,pattern = "Submitted batch job "
 
 # set additional parameters for scvi
 param_set = params_harmonization
+param_set$target_clusterN = param_set$target_clusterN_initial
+param_set$start_res = param_set$start_res_initial
+param_set$end_res = param_set$end_res_initial
+param_set$step_size = param_set$step_size_initial
+param_set$include_low_res = param_set$include_low_res_initial
+
 # make unique id:
 job_id=digest::digest(param_set)
 param_set$job_id = job_id
@@ -136,7 +138,7 @@ writeList_to_JSON(list_with_rows = param_set,filename = param_file)
 # not a loop
 script_path = "R/run_scripts/basic_marker_detection.R"
 # set sbatch params:
-jobname = paste0("basic_harmonization_",job_id)
+jobname = paste0("basic_markers_",job_id)
 outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
 errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
 dependency_ids = c(slurm_id_3)
@@ -145,23 +147,10 @@ slurm_id_4 = stringr::str_remove(output_message,pattern = "Submitted batch job "
 
 
 ##########
-### [5] Manual curation
+### [5] Manual curation based on inital harmonization
 ##########
 
+## Run curation script and save file in
 
-
-##########
-### [6] Hierachical tree
-##########
-
-
-##########
-### [7] Hierachical tree cluster markers + pruning
-##########
-
-
-##########
-### [8] Hierachical tree cluster markers re-run
-##########
-
+# parameter_list$curated_name,".rds"
 

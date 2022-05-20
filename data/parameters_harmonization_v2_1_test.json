@@ -27,5 +27,17 @@
   "dist_type": "cosine",
   "target_clusterN": 200,
   "start_res": 8,
-  "end_res": 20
+  "end_res": 20,
+  "basic_marker_filename": "_inital_markers",
+  "assay_markers": "RNA",
+  "assay_slot": "data",
+  "test.use": "wilcox-stratified",
+  "logfc.threshold": 0.25,
+  "min.pct": 0.1,
+  "min.diff.pct": 0.05,
+  "max.cells.per.ident": 20000,
+  "min.cells.feature": 10,
+  "min.cells.group": 10,
+  "base": 2,
+  "only.pos": true
 }
