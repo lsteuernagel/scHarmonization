@@ -33,21 +33,26 @@ harmonized_seurat_object@project.name = parameter_list$new_name_suffix
 harmonized_seurat_object@misc= list()
 harmonized_seurat_object@graphs= list()
 harmonized_seurat_object@reductions= list()
+dummy=matrix(data = as.numeric())
+harmonized_seurat_object@assays[["RNA"]]@scale.data <- dummy[,-1] # error is okay
 
 ##########
 ### Raw data & new object
 ##########
 
 # put scvi imputed into another assay
-message(Sys.time(),": Adding counts as new assay from: ",paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_scVI_corrected.txt"))
+# message(Sys.time(),": Adding counts as new assay from: ",paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_scVI_corrected.txt"))
+#
+# corrected_counts_scvi = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_scVI_corrected.txt"),data.table = F)
+# rownames(corrected_counts_scvi) = corrected_counts_scvi[,1]
+# corrected_counts_scvi = t(as.matrix(corrected_counts_scvi[,2:ncol(corrected_counts_scvi)]))
+# scvi_assay = CreateAssayObject(counts=corrected_counts_scvi, min.cells = 0, min.features = 0)
+#
+# harmonized_seurat_object@assays[[paste0(parameter_list$integration_name,'_corrected')]] = scvi_assay
+# harmonized_seurat_object@assays[[paste0(parameter_list$integration_name,'_corrected')]]@key =paste0(parameter_list$integration_name,"_corrected")
 
-corrected_counts_scvi = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_scVI_corrected.txt"),data.table = F)
-rownames(corrected_counts_scvi) = corrected_counts_scvi[,1]
-corrected_counts_scvi = t(as.matrix(corrected_counts_scvi[,2:ncol(corrected_counts_scvi)]))
-scvi_assay = CreateAssayObject(data=corrected_counts_scvi, min.cells = 0, min.features = 0)
-
-harmonized_seurat_object@assays[[paste0(parameter_list$integration_name,'_corrected')]] = scvi_assay
-harmonized_seurat_object@assays[[paste0(parameter_list$integration_name,'_corrected')]]@key =paste0(parameter_list$integration_name,"_corrected")
+# harmonized_seurat_object@assays$scvi_corrected@counts = harmonized_seurat_object@assays$scvi_corrected@data
+# harmonized_seurat_object =NormalizeData(harmonized_seurat_object,assay = "scvi_corrected")
 
 # # add hvgs
 # message("Adding variable feature names to assays")

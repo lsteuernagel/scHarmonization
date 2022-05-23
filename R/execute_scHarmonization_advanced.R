@@ -30,35 +30,6 @@ writeList_to_JSON = function (list_with_rows, filename){
 
 
 ##########
-### [6] Updated advanced object
-##########
-
-## also re-run
-
-# run umap and save model
-# message(Sys.time(),": Build UMAP with ",parameter_list$k_param," n.neighbors ..." )
-# harmonized_seurat_object = RunUMAP(harmonized_seurat_object,
-#                                    reduction = parameter_list$integration_name,
-#                                    seed.use= parameter_list$global_seed,
-#                                    dims=1:ncol(harmonized_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
-#                                    reduction.name=paste0("umap_",parameter_list$integration_name),
-#                                    reduction.key = paste0("umap_",parameter_list$integration_name),
-#                                    verbose=F,
-#                                    n.neighbors = parameter_list$k_param,
-#                                    return.model = TRUE)
-#
-# # run seurat SNN annoy
-# message(Sys.time(),": Build SNN with ",parameter_list$k_param," n.neighbors ..." )
-# harmonized_seurat_object = FindNeighbors(harmonized_seurat_object,
-#                                          reduction=parameter_list$integration_name,
-#                                          dims = 1:ncol(harmonized_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
-#                                          k.param = parameter_list$k_param,
-#                                          nn.method="annoy",
-#                                          annoy.metric=parameter_list$dist_type,
-#                                          graph.name = paste0("SNN_",parameter_list$integration_name), verbose=TRUE)
-
-
-##########
 ### [7] Clustering for hierachical tree after curation
 ##########
 

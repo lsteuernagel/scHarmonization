@@ -12,7 +12,7 @@ param_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_par
 log_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_slurmlogs/"
 
 # load json file with all other information
-params_harmonization = jsonlite::read_json("data/parameters_harmonization_v2_1_test.json")
+params_harmonization = jsonlite::read_json("data/parameters_harmonization_v2_2.json")
 # if some fields are lists --> unlist
 params_harmonization = lapply(params_harmonization,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 

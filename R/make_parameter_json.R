@@ -4,12 +4,12 @@
 param_list = list()
 
 # must be loaded from params:
-param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization_test/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_harmonization/"
+param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_harmonization/"
 #param_list$processed_suffix = "_seurat_processed"
 
 # for final merged object:
-param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_downsampled_example.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
-param_list$new_name_suffix = "hypoMap_test"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
+param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_downsampled_example.rds"#
+param_list$new_name_suffix = "hypoMap_harmonized"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
 
 # signature for evaluation
 param_list$genes_to_exclude_file = "data/features_exclude_list2.json"
@@ -29,10 +29,10 @@ param_list$integration_name = "scvi"
 param_list$categorical_covariates = c("Dataset",param_list$batch_var)
 param_list$continuous_covariates =character(0)
 param_list$n_layers = 3
-param_list$n_latent = 85
+param_list$n_latent = 65
 param_list$n_hidden = 256
 param_list$dropout_rate = 0.1
-param_list$max_epochs = 50
+param_list$max_epochs = 400
 param_list$early_stopping = FALSE
 param_list$dispersion = "gene"
 param_list$gene_likelihood = "zinb"
@@ -43,16 +43,16 @@ param_list$k_param = 30
 param_list$dist_type="cosine"
 
 ## initial clustering
-param_list$target_clusterN_intial = 200
-param_list$start_res_intial = 8
-param_list$end_res_intial = 20
-param_list$step_size_intial = 1
-param_list$include_low_res_intial = F
+param_list$target_clusterN_initial = 200
+param_list$start_res_initial = 10
+param_list$end_res_initial = 20
+param_list$step_size_initial = 1
+param_list$include_low_res_initial = FALSE
 
 ## full clustering
 param_list$target_clusterN = 400
 param_list$start_res = 1
-param_list$end_res = 30
+param_list$end_res = 40
 param_list$step_size = 1
 param_list$include_low_res = TRUE
 
@@ -72,4 +72,4 @@ param_list$only.pos = TRUE
 param_list$batch_var = param_list$batch_var
 
 # save
-scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_1_test.json")
+scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_2.json")

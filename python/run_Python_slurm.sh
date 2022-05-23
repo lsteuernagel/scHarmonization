@@ -2,7 +2,7 @@
 #SBATCH --ntasks=1
 #SBATCH --time=240:00:00
 #SBATCH --cpus-per-task=54
-#SBATCH --partition=blade-b
+#SBATCH --partition=highmem
 
 # need to get 3 variables from call
 # singularity image

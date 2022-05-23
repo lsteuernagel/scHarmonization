@@ -84,7 +84,7 @@ if(test.use=="wilcox-stratified"){
     if(length(harmonized_seurat_object@meta.data[harmonized_seurat_object@meta.data[,cluster_column] == current_cluster,cluster_column]) >= min.cells.group){
       # FindAll stratified and use batch_var
       # see stratified_wilcoxon_functions.R
-      all_markers_list[[current_cluster]] =FindMarkers2.Seurat(object = harmonized_seurat_object,
+      all_markers_list[[paste0("c_",as.character(current_cluster))]] =FindMarkers2.Seurat(object = harmonized_seurat_object,
                                                                ident.1 = current_cluster,
                                                                assay = assay_markers,
                                                                features = genes_to_include,
@@ -101,8 +101,8 @@ if(test.use=="wilcox-stratified"){
                                                                only.pos = only.pos,
                                                                latent.vars = batch_var,
                                                                genre = "locally-best")
-      all_markers_list[[current_cluster]]$cluster = current_cluster
-      all_markers_list[[current_cluster]]$gene = rownames(all_markers_list[[current_cluster]])
+      all_markers_list[[paste0("c_",current_cluster)]]$cluster = current_cluster
+      all_markers_list[[paste0("c_",current_cluster)]]$gene = rownames(all_markers_list[[paste0("c_",current_cluster)]])
     }
   }
   all_markers = do.call(rbind, all_markers_list)
@@ -114,7 +114,7 @@ if(test.use=="wilcox-stratified"){
     message("Calculating cluster ",current_cluster)
     # FindAll stratified and use batch_var
     # see stratified_wilcoxon_functions.R
-    all_markers_list[[current_cluster]] <- tryCatch({
+    all_markers_list[[paste0("c_",as.character(current_cluster))]] <- tryCatch({
       temp_df = Seurat::FindMarkers(object = harmonized_seurat_object,
                                     ident.1 = current_cluster,
                                     assay = assay_markers,
@@ -142,6 +142,8 @@ if(test.use=="wilcox-stratified"){
 }
 
 #all_markers$specificity = (all_markers$pct.1 / all_markers$pct.2) * all_markers$avg_logFC
+
+all_markers$cluster = stringr::str_remove(all_markers$cluster,pattern = "c_")
 
 ##########
 ### Save result
