@@ -8,6 +8,7 @@ parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_1_test.js
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 
+
 ##########
 ### Load seurat object + clustering + amrker detection results
 ##########
@@ -71,6 +72,7 @@ harmonized_seurat_object_test@meta.data = temp_meta
 
 keep_cells = harmonized_seurat_object_test@meta.data$Cell_ID[!harmonized_seurat_object_test@meta.data$Author_Class_Curated_orig %in% c("Doublet","Unknown") ]
 curated_seurat_object = subset(harmonized_seurat_object_test,cells = keep_cells)
+curated_seurat_object@meta.data$Author_Class_Curated = curated_seurat_object@meta.data$Author_Class_Curated_orig # onyl for test object !
 
 ##########
 ### Updated curated object NN trees
@@ -104,7 +106,7 @@ curated_seurat_object = FindNeighbors(curated_seurat_object,
 ### Save
 ##########
 
-DimPlot(curated_seurat_object,group.by = "Author_Class",raster = F,reduction = "umap_scvi")
+DimPlot(curated_seurat_object,group.by = "Author_Class_Curated",raster = F,reduction = "umap_scvi",label=TRUE,label.size = 4)
 
 # name
 file_name_prefix = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated")
@@ -112,6 +114,12 @@ file_name_prefix = paste0(parameter_list$harmonization_folder_path,parameter_lis
 # save data to rds
 saveRDS(curated_seurat_object,paste0(file_name_prefix,".rds"))
 
+# save h5seurat
+SeuratDisk::SaveH5Seurat(object = curated_seurat_object,filename = paste0(file_name_prefix,".h5seurat"), overwrite = TRUE, verbose = TRUE)
+
+# save to anndata
+SeuratDisk::Convert( paste0(file_name_prefix,".h5seurat"), dest =  paste0(file_name_prefix,".h5ad"),assay="RNA",verbose=TRUE,overwrite=TRUE)
+system(paste0("rm ",paste0(file_name_prefix,".h5seurat")))
 
 
 

@@ -4,12 +4,12 @@
 param_list = list()
 
 # must be loaded from params:
-param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_harmonization/"
+param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization_test//"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_harmonization/"
 #param_list$processed_suffix = "_seurat_processed"
 
 # for final merged object:
 param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_downsampled_example.rds"#
-param_list$new_name_suffix = "hypoMap_harmonized"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
+param_list$new_name_suffix = "hypoMap_test"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
 
 # signature for evaluation
 param_list$genes_to_exclude_file = "data/features_exclude_list2.json"
@@ -50,11 +50,14 @@ param_list$step_size_initial = 1
 param_list$include_low_res_initial = FALSE
 
 ## full clustering
-param_list$target_clusterN = 400
+param_list$target_clusterN = 300
 param_list$start_res = 1
 param_list$end_res = 40
 param_list$step_size = 1
 param_list$include_low_res = TRUE
+
+# mrtree
+param_list$clusters_for_mrtree_file = "mrtree_input_labels.txt"
 
 # basic marker detection
 param_list$basic_marker_filename = "_inital_markers"
@@ -72,4 +75,4 @@ param_list$only.pos = TRUE
 param_list$batch_var = param_list$batch_var
 
 # save
-scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_2.json")
+scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_1_test.json")

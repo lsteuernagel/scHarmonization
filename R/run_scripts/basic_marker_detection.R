@@ -29,7 +29,7 @@ features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){
 harmonized_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
 
 # load clusters
-hypoMap_test_initial_leiden_clustering = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_initial_leiden_clustering.txt"),data.table = F)
+hypoMap_test_initial_leiden_clustering = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_leiden_clustering.txt"),data.table = F)
 temp_meta = dplyr::left_join(harmonized_seurat_object@meta.data,hypoMap_test_initial_leiden_clustering[,c(1,ncol(hypoMap_test_initial_leiden_clustering))],by="Cell_ID")
 rownames(temp_meta) = temp_meta$Cell_ID
 harmonized_seurat_object@meta.data = temp_meta
@@ -65,10 +65,16 @@ Idents(harmonized_seurat_object) = cluster_column # set ident!!
 
 # genes to test
 #seurat_raw@assays[["RNA"]]@counts
-gene_expr_dataset = harmonized_seurat_object@assays[['RNA']]@counts
-gene_expr_dataset[gene_expr_dataset!=0] = 1
+set.seed(parameter_list$global_seed)
+subset = sample(colnames(harmonized_seurat_object@assays[['RNA']]@data),size = 30000)
+gene_expr_dataset = harmonized_seurat_object@assays[['RNA']]@data[,subset]
+message("change to  1")
+gene_expr_dataset[gene_expr_dataset != 0] <- 1 # set to 1 for occ
+#gene_expr_dataset[gene_expr_dataset > 0] = 1
+message("rowsums")
 gene_sums = Matrix::rowSums(gene_expr_dataset)
-genes_to_include = names(gene_sums)[gene_sums > min.cells.feature ]
+message("select genes")
+genes_to_include = names(gene_sums)[gene_sums > floor(min.cells.feature * (30000 / ncol((harmonized_seurat_object@assays[['RNA']]@data)))) ]
 genes_to_include = genes_to_include[! genes_to_include %in% features_exclude_list]
 message("Testing ",length(genes_to_include)," genes as cluster markers")
 

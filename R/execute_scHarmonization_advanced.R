@@ -2,6 +2,8 @@
 ### Load
 ##########
 
+# Important: add your curated name as file !
+
 # source("R/harmonization_functions.R")
 singularity_path = "~/Documents/r_scvi_015.simg"
 
@@ -15,6 +17,9 @@ log_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_slurm
 params_harmonization = jsonlite::read_json("data/parameters_harmonization_v2_1_test.json")
 # if some fields are lists --> unlist
 params_harmonization = lapply(params_harmonization,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
+
+# update suffix name:
+params_harmonization$new_name_suffix = paste0(params_harmonization$new_name_suffix,"_curated")
 
 ### try to creat dir if necessary:
 system(paste0("mkdir -p ",paste0(param_path)))
@@ -30,7 +35,7 @@ writeList_to_JSON = function (list_with_rows, filename){
 
 
 ##########
-### [7] Clustering for hierachical tree after curation
+### [1] Clustering for hierachical tree after curation
 ##########
 
 # set additional parameters for scvi
@@ -47,12 +52,11 @@ script_path = "python/basic_leiden_clustering.py"
 jobname = paste0("leiden_scanpy_",job_id)
 outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
 errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
-dependency_ids = c(slurm_id_2)
-output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes python/run_Python_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
-slurm_id_3 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --kill-on-invalid-dep=yes python/run_Python_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
+slurm_id_1 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
 ##########
-### [8] Define cluster levels for mr_tree
+### [2] Define cluster levels for mr_tree
 ##########
 
 
@@ -62,7 +66,7 @@ slurm_id_3 = stringr::str_remove(output_message,pattern = "Submitted batch job "
 
 
 ##########
-### [9] Hierachical tree
+### [3] Hierachical tree
 ##########
 
 # set params
@@ -78,9 +82,9 @@ script_path = "R/run_scripts/mrtree_construction.R"
 jobname = paste0("mrtree_construction_",job_id)
 outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
 errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
-dependency_ids = c(slurm_id_3)
+dependency_ids = c(slurm_id_1)
 output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
-slurm_id_9 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+slurm_id_3 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
 ##########
 ### [10] Hierachical tree cluster markers + pruning

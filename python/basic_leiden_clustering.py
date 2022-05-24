@@ -70,7 +70,7 @@ for res in resolutions:
 
 #save
 meta_subset = adata.obs.filter(regex=("leiden_clusters_"))
-meta_subset.to_csv(results_path+new_name_suffix+"_initial_leiden_clustering.txt", sep='\t',index=True)
+meta_subset.to_csv(results_path+new_name_suffix+"_leiden_clustering.txt", sep='\t',index=True)
 
 print(" Finalized clustering")
 

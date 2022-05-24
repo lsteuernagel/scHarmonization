@@ -2,7 +2,7 @@
 ### Load parameters and packages
 ##########
 
-message(Sys.time(),": Starting fast marker detection .." )
+message(Sys.time(),": Starting mtrtree construction .." )
 
 message(" Load parameters and packages ")
 
@@ -11,7 +11,7 @@ require(Seurat)
 require(Matrix)
 
 source("R/harmonization_functions.R")
-source("R/stratified_wilcoxon_functions.R")
+source("R/mrtree_functions.R")
 
 # get params-filename from commandline
 command_args<-commandArgs(TRUE)
@@ -21,15 +21,11 @@ parameter_list = jsonlite::read_json(param_file)
 # if some fields are lists --> unlist
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
-# read features to excludes
-features_exclude_list= jsonlite::read_json(parameter_list$genes_to_exclude_file)
-features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
-
 # load seurat
-harmonized_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
+#harmonized_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated",".rds"))
 
 # load clusters
-cluster_matrix_for_mrtree = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_initial_leiden_clustering.txt"),data.table = F)
+cluster_matrix_for_mrtree = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$clusters_for_mrtree_file),data.table = F)
 # ensure that cells are in right order!
 # TODO
 
@@ -56,10 +52,12 @@ mrtree_res <- mrtree(cluster_matrix_for_mrtree,
                      suffix = NULL,
                      max.k = Inf,
                      consensus = FALSE,
-                     sample.weighted = parameter_list$mr_tree_weighted,
+                     sample.weighted = FALSE, # parameter_list$mr_tree_weighted,
                      augment.path = FALSE,
                      verbose = FALSE,
                      n.cores = parameter_list$n_cores)
+
+saveRDS(mrtree_res,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated","_mrtree_res_raw",".rds"))
 
 # make labelmat with colnames included
 labelmat=mrtree_res$labelmat.mrtree
@@ -86,17 +84,14 @@ cluster_object = list(labelmat = labelmat,
                       edgelist = edges ,
                       nodelist = nodes,
                       data_tree = tree.datatree,
-                      mrtree_output = mrtree_res,
-                      orginal_resolutions = resolutions)
+                      mrtree_output = mrtree_res)
 #seurat_object_harmonized@misc$mrtree_clustering_results = cluster_object
 
 ##########
 ###Save
 ##########
 
-seurat_object_harmonized@misc$mrtree_edgelist = edges
-
 # save object as rds
-saveRDS(cluster_object,paste0(harmonization_file_path,project_name,suffix_im,"_mrtree_clustering_results",".rds"))
+saveRDS(cluster_object,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated","_mrtree_clustering_results",".rds"))
 
 message("Finalized")
