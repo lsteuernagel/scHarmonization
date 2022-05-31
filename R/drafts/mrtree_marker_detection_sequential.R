@@ -171,6 +171,7 @@ for(comp in comparison_types){
     }
     if(comp == "All"){
       cluster_2 = all_nodes[! all_nodes %in% current_node]
+      cluster_2 = cluster_2[cluster_2 %in% edgelist$to[edgelist$clusterlevel == current_level]]
     }
     #calculate markers
     #  current_markers <- tryCatch({

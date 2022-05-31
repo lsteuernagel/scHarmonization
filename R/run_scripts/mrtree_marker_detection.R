@@ -136,56 +136,57 @@ findMarkers_tree2 = function(seurat_object,edgelist,labelmat,n_cores=1,use_strat
       }
       if(comp == "All"){
         cluster_2 = all_nodes[! all_nodes %in% current_node]
+        cluster_2 = cluster_2[cluster_2 %in% edgelist$to[edgelist$clusterlevel == current_level]] # need to ensure that only current level is used!
       }
       #calculate markers
       #  current_markers <- tryCatch({
       if(length(cluster_2)>0){
-        if(test.use == "wilcox-stratified"){
-          current_markers = FindMarkers2.Seurat(object = seurat_object,
-                                                ident.1 = cluster_1,
-                                                ident.2 = cluster_2,
-                                                assay = assay_markers,
-                                                features = genes_to_include,
-                                                logfc.threshold = logfc.threshold,
-                                                slot = assay_slot,
-                                                test.use = "VE",
-                                                min.pct = min.pct,
-                                                min.diff.pct = min.diff.pct,
-                                                max.cells.per.ident=max.cells.per.ident,
-                                                min.cells.feature = min.cells.feature,
-                                                min.cells.group = min.cells.group,
-                                                return.thresh = 1,
-                                                base = base,
-                                                only.pos = only.pos,
-                                                latent.vars = batch_var,
-                                                genre = "locally-best")
-          if(base==2){
-            colnames(current_markers)[colnames(current_markers)=="avg_logFC"] = "avg_log2FC"
-          }
-        }else{
-          current_markers=Seurat::FindMarkers(object = seurat_object,
+      if(test.use == "wilcox-stratified"){
+        current_markers = FindMarkers2.Seurat(object = seurat_object,
                                               ident.1 = cluster_1,
                                               ident.2 = cluster_2,
                                               assay = assay_markers,
-                                              logfc.threshold = logfc.threshold,
                                               features = genes_to_include,
+                                              logfc.threshold = logfc.threshold,
                                               slot = assay_slot,
-                                              test.use =test.use,
+                                              test.use = "VE",
                                               min.pct = min.pct,
                                               min.diff.pct = min.diff.pct,
                                               max.cells.per.ident=max.cells.per.ident,
                                               min.cells.feature = min.cells.feature,
                                               min.cells.group = min.cells.group,
+                                              return.thresh = 1,
                                               base = base,
-                                              only.pos = only.pos)
+                                              only.pos = only.pos,
+                                              latent.vars = batch_var,
+                                              genre = "locally-best")
+        if(base==2){
+          colnames(current_markers)[colnames(current_markers)=="avg_logFC"] = "avg_log2FC"
         }
-        current_markers$gene = rownames(current_markers)
-        current_markers$cluster_id = cluster_1
-        current_markers$comparison = comp
-        current_markers$parent = parent_node
-        current_markers
       }else{
-        NULL
+        current_markers=Seurat::FindMarkers(object = seurat_object,
+                                            ident.1 = cluster_1,
+                                            ident.2 = cluster_2,
+                                            assay = assay_markers,
+                                            logfc.threshold = logfc.threshold,
+                                            features = genes_to_include,
+                                            slot = assay_slot,
+                                            test.use =test.use,
+                                            min.pct = min.pct,
+                                            min.diff.pct = min.diff.pct,
+                                            max.cells.per.ident=max.cells.per.ident,
+                                            min.cells.feature = min.cells.feature,
+                                            min.cells.group = min.cells.group,
+                                            base = base,
+                                            only.pos = only.pos)
+      }
+      current_markers$gene = rownames(current_markers)
+      current_markers$cluster_id = cluster_1
+      current_markers$comparison = comp
+      current_markers$parent = parent_node
+      current_markers
+      }else{
+       NULL
       }
       # },error=function(cond) {
       #   message(cond)
