@@ -36,6 +36,7 @@
   "step_size": 1,
   "include_low_res": true,
   "clusters_for_mrtree_file": "mrtree_input_labels.txt",
+  "specificity_base": 0.001,
   "basic_marker_filename": "_inital_markers",
   "assay_markers": "RNA",
   "assay_slot": "data",

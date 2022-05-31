@@ -44,7 +44,7 @@ scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 p1 = DimPlot(harmonized_seurat_object,group.by = cluster_column,raster = F,label=TRUE)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
-gene="Lum"
+gene="Tacr2"
 DefaultAssay(harmonized_seurat_object) <- "RNA"
 p1=FeaturePlot(harmonized_seurat_object,features = gene,raster = F,order=TRUE)
 p1=scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)

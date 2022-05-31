@@ -87,11 +87,15 @@ output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",err
 slurm_id_3 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
 ##########
-### [10] Hierachical tree cluster markers + pruning
+### [4] Hierachical tree cluster markers
 ##########
 
 # set params
 param_set = params_harmonization
+param_set$n_cores_markers = 4
+param_set$marker_suffix = "raw"
+param_set$start_node = "K2-0" # "all" for everything
+#param_set$marker_suffix = "nonneuron"
 # make unique id:
 job_id=digest::digest(param_set)
 # write to JSON as transfer file
@@ -105,7 +109,7 @@ outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
 errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
 dependency_ids = c(slurm_id_3)
 output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
-slurm_id_9 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+slurm_id_4 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
 ##########
 ### [11] Prune tree

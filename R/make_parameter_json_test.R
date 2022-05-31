@@ -58,13 +58,14 @@ param_list$include_low_res = TRUE
 
 # mrtree
 param_list$clusters_for_mrtree_file = "mrtree_input_labels.txt"
+param_list$specificity_base = 0.001
 
 # basic marker detection
 param_list$basic_marker_filename = "_inital_markers"
 param_list$assay_markers ="RNA"
 param_list$assay_slot = "data"
 param_list$test.use = "wilcox-stratified" # either "wilcox-stratified" or a basic Seurat FindMarkers test
-param_list$logfc.threshold = 0.25
+param_list$logfc.threshold = 0.3
 param_list$min.pct = 0.1
 param_list$min.diff.pct = 0.05
 param_list$max.cells.per.ident = 20000

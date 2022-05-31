@@ -64,20 +64,20 @@ message(Sys.time(),": Start marker detection" )
 Idents(harmonized_seurat_object) = cluster_column # set ident!!
 
 # genes to test
-#seurat_raw@assays[["RNA"]]@counts
-set.seed(parameter_list$global_seed)
-subset = sample(colnames(harmonized_seurat_object@assays[['RNA']]@data),size = 30000)
-gene_expr_dataset = harmonized_seurat_object@assays[['RNA']]@data[,subset]
-message("change to  1")
+if(ncol(harmonized_seurat_object@assays[['RNA']]@data) > 30000){
+  set.seed(parameter_list$global_seed)
+  subset = sample(colnames(harmonized_seurat_object@assays[['RNA']]@data),size = 30000)
+  gene_expr_dataset = harmonized_seurat_object@assays[['RNA']]@data[,subset]
+}else{
+  gene_expr_dataset = harmonized_seurat_object@assays[['RNA']]@data
+}
 gene_expr_dataset[gene_expr_dataset != 0] <- 1 # set to 1 for occ
-#gene_expr_dataset[gene_expr_dataset > 0] = 1
-message("rowsums")
 gene_sums = Matrix::rowSums(gene_expr_dataset)
-message("select genes")
+rm(gene_expr_dataset)
 genes_to_include = names(gene_sums)[gene_sums > min.cells.feature ]
 genes_to_include = genes_to_include[! genes_to_include %in% features_exclude_list]
 message("Testing ",length(genes_to_include)," genes as cluster markers")
-
+counter=1
 if(test.use=="wilcox-stratified"){
   # check batch var
   if(! batch_var %in% colnames(harmonized_seurat_object@meta.data)){stop("Error: Cannot find ",batch_var," in object")}
@@ -86,27 +86,28 @@ if(test.use=="wilcox-stratified"){
   all_clusters = unique(harmonized_seurat_object@meta.data[,cluster_column])
   all_markers_list = list()
   for(current_cluster in all_clusters){
-    message("Calculating cluster ",current_cluster)
+    message("Calculating cluster ",current_cluster," (",counter,"/",length(all_clusters),")")
+    counter = counter+1
     if(length(harmonized_seurat_object@meta.data[harmonized_seurat_object@meta.data[,cluster_column] == current_cluster,cluster_column]) >= min.cells.group){
       # FindAll stratified and use batch_var
       # see stratified_wilcoxon_functions.R
       all_markers_list[[paste0("c_",as.character(current_cluster))]] =FindMarkers2.Seurat(object = harmonized_seurat_object,
-                                                               ident.1 = current_cluster,
-                                                               assay = assay_markers,
-                                                               features = genes_to_include,
-                                                               logfc.threshold = logfc.threshold,
-                                                               slot = assay_slot,
-                                                               test.use = "VE",
-                                                               min.pct = min.pct,
-                                                               min.diff.pct = min.diff.pct,
-                                                               max.cells.per.ident=max.cells.per.ident,
-                                                               min.cells.feature = min.cells.feature,
-                                                               min.cells.group = min.cells.group,
-                                                               return.thresh = 1,
-                                                               base = base,
-                                                               only.pos = only.pos,
-                                                               latent.vars = batch_var,
-                                                               genre = "locally-best")
+                                                                                          ident.1 = current_cluster,
+                                                                                          assay = assay_markers,
+                                                                                          features = genes_to_include,
+                                                                                          logfc.threshold = logfc.threshold,
+                                                                                          slot = assay_slot,
+                                                                                          test.use = "VE",
+                                                                                          min.pct = min.pct,
+                                                                                          min.diff.pct = min.diff.pct,
+                                                                                          max.cells.per.ident=max.cells.per.ident,
+                                                                                          min.cells.feature = min.cells.feature,
+                                                                                          min.cells.group = min.cells.group,
+                                                                                          return.thresh = 1,
+                                                                                          base = base,
+                                                                                          only.pos = only.pos,
+                                                                                          latent.vars = batch_var,
+                                                                                          genre = "locally-best")
       all_markers_list[[paste0("c_",current_cluster)]]$cluster = current_cluster
       all_markers_list[[paste0("c_",current_cluster)]]$gene = rownames(all_markers_list[[paste0("c_",current_cluster)]])
     }
@@ -117,9 +118,8 @@ if(test.use=="wilcox-stratified"){
   all_clusters = unique(harmonized_seurat_object@meta.data[,cluster_column])
   all_markers_list = list()
   for(current_cluster in all_clusters){
-    message("Calculating cluster ",current_cluster)
-    # FindAll stratified and use batch_var
-    # see stratified_wilcoxon_functions.R
+    message("Calculating cluster ",current_cluster," (",counter,"/",length(all_clusters),")")
+    counter = counter+1
     all_markers_list[[paste0("c_",as.character(current_cluster))]] <- tryCatch({
       temp_df = Seurat::FindMarkers(object = harmonized_seurat_object,
                                     ident.1 = current_cluster,

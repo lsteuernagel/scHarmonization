@@ -58,6 +58,7 @@ param_list$include_low_res = TRUE
 
 # mrtree
 param_list$clusters_for_mrtree_file = "mrtree_input_labels.txt"
+param_list$specificity_base = 0.001
 
 # basic marker detection
 param_list$basic_marker_filename = "_inital_markers"

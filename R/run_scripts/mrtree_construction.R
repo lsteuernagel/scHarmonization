@@ -59,6 +59,8 @@ mrtree_res <- mrtree(cluster_matrix_for_mrtree,
 
 saveRDS(mrtree_res,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated","_mrtree_res_raw",".rds"))
 
+message(Sys.time(),": Create mrtree ouput list" )
+
 # make labelmat with colnames included
 labelmat=mrtree_res$labelmat.mrtree
 n=nrow(labelmat)
@@ -92,6 +94,6 @@ cluster_object = list(labelmat = labelmat,
 ##########
 
 # save object as rds
-saveRDS(cluster_object,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated","_mrtree_clustering_results",".rds"))
+saveRDS(cluster_object,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_mrtree_clustering_results",".rds"))
 
 message("Finalized")
