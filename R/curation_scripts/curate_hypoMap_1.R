@@ -59,9 +59,9 @@ p1
 #####
 DefaultAssay(harmonized_seurat_object) <- "RNA"
 
-p1=FeaturePlot(harmonized_seurat_object,features = "Oxt",raster = F,order=TRUE)
+p1=FeaturePlot(harmonized_seurat_object,features = "Syn2",raster = F,order=TRUE)
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
-p1
+#p1
 
 p1 = DimPlot(harmonized_seurat_object,group.by = "Dataset",raster = F,shuffle = TRUE)
 p1+theme_grey()+NoLegend()
@@ -151,7 +151,7 @@ hypoMap_seurat@meta.data$Author_Class_Curated[hypoMap_seurat@meta.data$seurat_cl
 hypoMap_seurat@meta.data$Author_Class_Curated[hypoMap_seurat@meta.data$seurat_clusters=="47"] = "Tanycytes"
 hypoMap_seurat@meta.data$Author_Class_Curated[hypoMap_seurat@meta.data$seurat_clusters=="84"] = "Mural"
 
-# TODO: check
+# TODO: check 198, 204, 187, 193
 
 ##########
 ### Subset object

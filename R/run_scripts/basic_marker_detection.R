@@ -74,7 +74,7 @@ gene_expr_dataset[gene_expr_dataset != 0] <- 1 # set to 1 for occ
 message("rowsums")
 gene_sums = Matrix::rowSums(gene_expr_dataset)
 message("select genes")
-genes_to_include = names(gene_sums)[gene_sums > floor(min.cells.feature * (30000 / ncol((harmonized_seurat_object@assays[['RNA']]@data)))) ]
+genes_to_include = names(gene_sums)[gene_sums > min.cells.feature ]
 genes_to_include = genes_to_include[! genes_to_include %in% features_exclude_list]
 message("Testing ",length(genes_to_include)," genes as cluster markers")
 

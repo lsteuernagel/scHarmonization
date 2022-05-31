@@ -4,12 +4,12 @@
 param_list = list()
 
 # must be loaded from params:
-param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_harmonization/"
+param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization_test/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_harmonization/"
 #param_list$processed_suffix = "_seurat_processed"
 
 # for final merged object:
 param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_downsampled_example.rds"#
-param_list$new_name_suffix = "hypoMap_harmonized"#
+param_list$new_name_suffix = "hypoMap_test"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
 
 # signature for evaluation
 param_list$genes_to_exclude_file = "data/features_exclude_list2.json"
@@ -67,7 +67,7 @@ param_list$test.use = "wilcox-stratified" # either "wilcox-stratified" or a basi
 param_list$logfc.threshold = 0.25
 param_list$min.pct = 0.1
 param_list$min.diff.pct = 0.05
-param_list$max.cells.per.ident = 10000
+param_list$max.cells.per.ident = 20000
 param_list$min.cells.feature = 10
 param_list$min.cells.group =  10
 param_list$base = 2
@@ -75,4 +75,4 @@ param_list$only.pos = TRUE
 param_list$batch_var = param_list$batch_var
 
 # save
-scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_2.json")
+scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_1_test.json")

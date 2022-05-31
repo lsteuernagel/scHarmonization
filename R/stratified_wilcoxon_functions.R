@@ -274,15 +274,20 @@ FindMarkers2.default <- function(
     'scale.data' = counts,
     object
   )
+  message("   FindMarkers2.default: ","Calculate pcts")
+  # subset only once to speed up!
+  data_for_cells1 = data[features, cells.1, drop = FALSE]
+  data_for_cells2 = data[features, cells.2, drop = FALSE]
+
   if (is.null(x = reduction)) {
     thresh.min <- 0
     pct.1 <- round(
-      x = rowSums(x = data[features, cells.1, drop = FALSE] > thresh.min) /
+      x = rowSums(x = data_for_cells1 > thresh.min) /
         length(x = cells.1),
       digits = 3
     )
     pct.2 <- round(
-      x = rowSums(x = data[features, cells.2, drop = FALSE] > thresh.min) /
+      x = rowSums(x = data_for_cells2 > thresh.min) /
         length(x = cells.2),
       digits = 3
     )
@@ -307,30 +312,26 @@ FindMarkers2.default <- function(
       pct.2 = rep(x = NA, times = length(x = features))
     )
   }
+  message("   FindMarkers2.default: ","Calculate mean diff")
   # feature selection (based on average difference)
+  # edited this to resemble the latest seurat versions (skip apply to avoid implicit cast to dense ! )
   mean.fxn <- if (is.null(x = reduction) && slot != "scale.data") {
     switch(
       EXPR = slot,
       'data' = function(x) {
-        return(log(x = mean(x = expm1(x = x)) + pseudocount.use,base = base))
+        return(log(x = rowMeans(x = expm1(x = x)) + pseudocount.use,base = base))
       },
       function(x) {
-        return(log(x = mean(x = x) + pseudocount.use,base = base))
+        return(log(x = rowMeans(x = x) + pseudocount.use,base = base))
       }
     )
   } else {
-    mean
+    rowMeans
   }
-  data.1 <- apply(
-    X = data[features, cells.1, drop = FALSE],
-    MARGIN = 1,
-    FUN = mean.fxn
-  )
-  data.2 <- apply(
-    X = data[features, cells.2, drop = FALSE],
-    MARGIN = 1,
-    FUN = mean.fxn
-  )
+  # also updated mean calc
+  data.1 = mean.fxn(data_for_cells1)
+  data.2 = mean.fxn(data_for_cells2)
+  # get total diff
   total.diff <- (data.1 - data.2)
   if (is.null(x = reduction) && slot != "scale.data") {
     features.diff <- if (only.pos) {
@@ -343,6 +344,7 @@ FindMarkers2.default <- function(
       stop("No features pass logfc.threshold threshold")
     }
   }
+  message("   FindMarkers2.default: ","Subset to max.cells.per.ident")
   if (max.cells.per.ident < Inf) {
     set.seed(seed = random.seed)
     # Should be cells.1 and cells.2?
@@ -357,6 +359,7 @@ FindMarkers2.default <- function(
     }
   }
   # perform DE
+  message("   FindMarkers2.default: ","perform DE")
   if (!(test.use %in% c('negbinom', 'poisson', 'MAST', "LR", 'VE')) && !is.null(x = latent.vars)) {
     warning(
       "'latent.vars' is only used for 'negbinom', 'poisson', 'LR', 'VE', and 'MAST' tests",
