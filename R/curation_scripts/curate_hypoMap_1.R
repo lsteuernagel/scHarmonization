@@ -23,8 +23,8 @@ harmonized_seurat_object@meta.data = temp_meta
 cluster_column = colnames(hypoMap_test_initial_leiden_clustering)[ncol(hypoMap_test_initial_leiden_clustering)]
 
 # markers
-#data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$basic_marker_filename,".txt"))
-
+basic_markers = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$basic_marker_filename,".txt"))
+basic_markers$specificity
 
 ##########
 ### Visualization
