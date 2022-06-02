@@ -20,18 +20,20 @@ parameter_list = jsonlite::read_json(param_file)
 # if some fields are lists --> unlist
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
+parameter_list$new_name_suffix = paste0(parameter_list$new_name_suffix,"_curated")
+
 # read features to excludes
-features_exclude_list= jsonlite::read_json(parameter_list$genes_to_exclude_file)
-features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
+features_exclude_list= unlist(jsonlite::read_json(parameter_list$genes_to_exclude_file))
+#features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # load seurat
 harmonized_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
 
 # load mrtree clustering
-mrtree_result = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_mrtree_clustering_results",".rds"))
+mrtree_result = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_","pruned","_mrtree_clustering_results",".rds"))
 
 # define output file name
-output_file_name = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$basic_marker_filename,".txt")
+#output_file_name = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$basic_marker_filename,".txt")
 
 # important: start node
 start_node = parameter_list$start_node
@@ -66,29 +68,25 @@ if(is.null(base)){base = 2}
 edgelist = mrtree_result$edgelist[,1:2]
 labelmat = mrtree_result$labelmat
 
+# add
+#harmonized_seurat_object@meta.data = cbind(harmonized_seurat_object@meta.data,labelmat)
+
 # if start node if specified:
 # find subtree and subset edgelist:
 
-# find children in tree recusrively based on simple edgelist
-find_children = function(nodes,edges){
-  current_children = edges$to[edges$from %in% nodes]
-  #print(paste0(current_children,collapse = "|"))
-  if(length(current_children)>0){
-    all_children = c(current_children,find_children(current_children,edges))
-  }else{
-    all_children = current_children
-  }
-  return(all_children)
-}
-
 # walk through tree:
-all_children = find_children(nodes = start_node, edges = edgelist[,1:2])
+all_children = scUtils::find_children(nodes = start_node, edges = edgelist[,1:2])
 
 # subset =
 edgelist = edgelist[edgelist$to %in% all_children,]
 
 # whichc ells to include when downsampleing for feature abundance check
-cells_to_check = rownames(harmonized_seurat_object@meta.data)[labelmat[,which(apply(labelmat,2,function(x,target){target %in% x},target=start_node))] == start_node]
+# todo this fails if start_node == "all"
+if(start_node != "all"){
+  cells_to_check = rownames(harmonized_seurat_object@meta.data)[labelmat[,which(apply(labelmat,2,function(x,target){target %in% x},target=start_node))] == start_node]
+}else{
+  cells_to_check = rownames(harmonized_seurat_object@meta.data)
+}
 
 ##########
 ### Calculate markers between leaf-siblings ?  and merge ?
@@ -141,6 +139,8 @@ label_mat_long = as.data.frame(labelmat) %>% tidyr::pivot_longer(everything(),na
 edgelist = dplyr::left_join(edgelist,label_mat_long,by=c("to"="cluster")) %>% dplyr::distinct(from,to,clusterlevel)
 all_nodes = unique(edgelist[,2])
 #all_nodes = all_nodes[!all_nodes %in% c("all","root")]
+
+all_nodes = all_nodes[1:20]
 
 comparisons_siblings = NULL
 comparisons_all = NULL

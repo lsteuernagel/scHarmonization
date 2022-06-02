@@ -224,6 +224,12 @@ curated_seurat_object = FindNeighbors(curated_seurat_object,
 # name
 file_name_prefix = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated")
 
+# remove scvi corrected to make things smaller and faster
+curated_seurat_object[['scvi_corrected']] <- NULL
+# remove scale data
+dummy=matrix(data = as.numeric())
+curated_seurat_object@assays[["RNA"]]@scale.data <- dummy[,-1] # error is okay
+
 # save data to rds
 saveRDS(curated_seurat_object,paste0(file_name_prefix,".rds"))
 

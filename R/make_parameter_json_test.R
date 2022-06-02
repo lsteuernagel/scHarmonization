@@ -55,6 +55,7 @@ param_list$start_res = 1
 param_list$end_res = 40
 param_list$step_size = 1
 param_list$include_low_res = TRUE
+param_list$min_cells_valid = 3
 
 # mrtree
 param_list$clusters_for_mrtree_file = "mrtree_input_labels.txt"

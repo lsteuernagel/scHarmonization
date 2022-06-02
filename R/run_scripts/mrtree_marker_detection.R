@@ -141,52 +141,52 @@ findMarkers_tree2 = function(seurat_object,edgelist,labelmat,n_cores=1,use_strat
       #calculate markers
       #  current_markers <- tryCatch({
       if(length(cluster_2)>0){
-      if(test.use == "wilcox-stratified"){
-        current_markers = FindMarkers2.Seurat(object = seurat_object,
+        if(test.use == "wilcox-stratified"){
+          current_markers = FindMarkers2.Seurat(object = seurat_object,
+                                                ident.1 = cluster_1,
+                                                ident.2 = cluster_2,
+                                                assay = assay_markers,
+                                                features = genes_to_include,
+                                                logfc.threshold = logfc.threshold,
+                                                slot = assay_slot,
+                                                test.use = "VE",
+                                                min.pct = min.pct,
+                                                min.diff.pct = min.diff.pct,
+                                                max.cells.per.ident=max.cells.per.ident,
+                                                min.cells.feature = min.cells.feature,
+                                                min.cells.group = min.cells.group,
+                                                return.thresh = 1,
+                                                base = base,
+                                                only.pos = only.pos,
+                                                latent.vars = batch_var,
+                                                genre = "locally-best")
+          if(base==2){
+            colnames(current_markers)[colnames(current_markers)=="avg_logFC"] = "avg_log2FC"
+          }
+        }else{
+          current_markers=Seurat::FindMarkers(object = seurat_object,
                                               ident.1 = cluster_1,
                                               ident.2 = cluster_2,
                                               assay = assay_markers,
-                                              features = genes_to_include,
                                               logfc.threshold = logfc.threshold,
+                                              features = genes_to_include,
                                               slot = assay_slot,
-                                              test.use = "VE",
+                                              test.use =test.use,
                                               min.pct = min.pct,
                                               min.diff.pct = min.diff.pct,
                                               max.cells.per.ident=max.cells.per.ident,
                                               min.cells.feature = min.cells.feature,
                                               min.cells.group = min.cells.group,
-                                              return.thresh = 1,
                                               base = base,
-                                              only.pos = only.pos,
-                                              latent.vars = batch_var,
-                                              genre = "locally-best")
-        if(base==2){
-          colnames(current_markers)[colnames(current_markers)=="avg_logFC"] = "avg_log2FC"
+                                              only.pos = only.pos)
         }
+        current_markers$gene = rownames(current_markers)
+        current_markers$cluster_id = cluster_1
+        current_markers$comparison = comp
+        current_markers$parent = parent_node
+        current_markers
       }else{
-        current_markers=Seurat::FindMarkers(object = seurat_object,
-                                            ident.1 = cluster_1,
-                                            ident.2 = cluster_2,
-                                            assay = assay_markers,
-                                            logfc.threshold = logfc.threshold,
-                                            features = genes_to_include,
-                                            slot = assay_slot,
-                                            test.use =test.use,
-                                            min.pct = min.pct,
-                                            min.diff.pct = min.diff.pct,
-                                            max.cells.per.ident=max.cells.per.ident,
-                                            min.cells.feature = min.cells.feature,
-                                            min.cells.group = min.cells.group,
-                                            base = base,
-                                            only.pos = only.pos)
-      }
-      current_markers$gene = rownames(current_markers)
-      current_markers$cluster_id = cluster_1
-      current_markers$comparison = comp
-      current_markers$parent = parent_node
-      current_markers
-      }else{
-       NULL
+        NULL
       }
       # },error=function(cond) {
       #   message(cond)
@@ -218,30 +218,22 @@ message("Object cells: ",ncol(harmonized_seurat_object),"  Labelmat cells: ",nro
 # if start node if specified:
 # find subtree and subset edgelist:
 
-# find children in tree recusrively based on simple edgelist
-find_children = function(nodes,edges){
-  current_children = edges$to[edges$from %in% nodes]
-  #print(paste0(current_children,collapse = "|"))
-  if(length(current_children)>0){
-    all_children = c(current_children,find_children(current_children,edges))
-  }else{
-    all_children = current_children
-  }
-  return(all_children)
-}
-
 # walk through tree:
-all_children = find_children(nodes = start_node, edges = edgelist[,1:2])
+all_children = scUtils::find_children(nodes = start_node, edges = edgelist[,1:2])
 if(length(all_children) < 3){
   message("Cannot find enough children for starting node ",start_node," . Using all nodes in tree instead")
   all_children =  unique(edges[,2])
 }
 
-# subset =
+# subset
 edgelist = edgelist[edgelist$to %in% all_children,]
 
 # whichc ells to include when downsampleing for feature abundance check
-cells_to_check = rownames(harmonized_seurat_object@meta.data)[labelmat[,which(apply(labelmat,2,function(x,target){target %in% x},target=start_node))] == start_node]
+if(start_node != "all"){
+  cells_to_check = rownames(harmonized_seurat_object@meta.data)[labelmat[,which(apply(labelmat,2,function(x,target){target %in% x},target=start_node))] == start_node]
+}else{
+  cells_to_check = rownames(harmonized_seurat_object@meta.data)
+}
 
 ##########
 ### Calculate markers between leaf-siblings ?  and merge ?

@@ -29,8 +29,8 @@ parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(
 # parameter_list$start_node = "C2-1"
 
 # read features to excludes
-features_exclude_list= jsonlite::read_json(parameter_list$genes_to_exclude_file)
-features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
+features_exclude_list= unlist(jsonlite::read_json(parameter_list$genes_to_exclude_file))
+#features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # load seurat
 harmonized_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
@@ -61,6 +61,9 @@ markers_comparisons_all = as.data.frame(do.call(rbind,markers_comparisons_all_li
 markers_comparisons_siblings  = as.data.frame(do.call(rbind,markers_comparisons_siblings_list))
 message("All markers for: ",length(unique(markers_comparisons_all$cluster_id))," clusters available")
 message("Sibling markers for: ",length(unique(markers_comparisons_siblings$cluster_id))," clusters available")
+
+hypoMap_test_curated_C21_markers_all_pruned = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization_test/hypoMap_test_curated_C2-1_markers_all_pruned.tsv")
+hypoMap_test_curated_C21_markers_siblings_pruned = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization_test/hypoMap_test_curated_C2-1_markers_siblings_pruned.tsv")
 
 ##########
 ### Load parameters and packages
@@ -148,7 +151,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
     # calculate score as adjusted specificity with a minimum value on pct.2 to put more emphasis on pct.1 (abundant markers)
     potential_descriptive_markers$pct.2_min = potential_descriptive_markers$pct.2
     potential_descriptive_markers$pct.2_min[potential_descriptive_markers$pct.2_min < min_pct2_score] = min_pct2_score
-    potential_descriptive_markers$score = (potential_descriptive_markers$pct.1 / potential_descriptive_markers$pct.2_min) * potential_descriptive_markers$avg_logFC
+    potential_descriptive_markers$score = (potential_descriptive_markers$pct.1 / potential_descriptive_markers$pct.2_min) * potential_descriptive_markers$avg_log2FC
 
     # initiate vector with genes that should be excluded!
     exclude_genes=c(manual_exclude_genes)
@@ -173,12 +176,6 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
     }else{
       reserved_genes=c()
     }
-
-    # other not so relevant genes like mt etc
-    tmp=sapply(potential_descriptive_markers$gene,grepl,pattern=removal_grep)#Seleno|
-    if(length(tmp)>0){
-      exclude_genes = c(exclude_genes,potential_descriptive_markers$gene[tmp])
-    }
     # if a gene is in preferred_genes
     if(nrow(potential_descriptive_markers)>0){
       potential_descriptive_markers$score[potential_descriptive_markers$gene %in% preferred_genes] = potential_descriptive_markers$score[potential_descriptive_markers$gene %in% preferred_genes] * scale_preferred
@@ -195,11 +192,11 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
         # calculate score and only keep highest children cluster
         sibling_markers_children$pct.2_min = sibling_markers_children$pct.2
         sibling_markers_children$pct.2_min[sibling_markers_children$pct.2_min < min_pct2_score] = min_pct2_score
-        sibling_markers_children$score = (sibling_markers_children$pct.1 / sibling_markers_children$pct.2_min) * sibling_markers_children$avg_logFC
+        sibling_markers_children$score = (sibling_markers_children$pct.1 / sibling_markers_children$pct.2_min) * sibling_markers_children$avg_log2FC
         sibling_markers_children = sibling_markers_children %>% dplyr::group_by(gene) %>% dplyr::filter(score == max(score)) %>%
           dplyr::distinct(gene,.keep_all =TRUE)
         # filter by specificity
-        sibling_markers_children =sibling_markers_children %>% dplyr::filter(! gene %in% exclude_genes & score > min_specificity) %>% dplyr::arrange(desc(score))
+        sibling_markers_children =sibling_markers_children %>% dplyr::filter(! gene %in% exclude_genes) %>% dplyr::arrange(desc(score)) #  & score > min_specificity
         # join score with potential_descriptive_markers
         if(nrow(sibling_markers_children)>0){
           sibling_markers_children$score_siblings_children = sibling_markers_children$score
@@ -221,7 +218,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
           # calculate score, scale and filter
           sibling_markers$pct.2_min = sibling_markers$pct.2
           sibling_markers$pct.2_min[sibling_markers$pct.2_min < min_pct2_score] = min_pct2_score
-          sibling_markers$score = (sibling_markers$pct.1 / sibling_markers$pct.2_min) * sibling_markers$avg_logFC
+          sibling_markers$score = (sibling_markers$pct.1 / sibling_markers$pct.2_min) * sibling_markers$avg_log2FC
           sibling_markers$score[sibling_markers$gene %in% preferred_genes] = sibling_markers$score[sibling_markers$gene %in% preferred_genes] * scale_preferred
           sibling_markers =sibling_markers %>% dplyr::filter(! gene %in% exclude_genes & score > min_specificity) %>% dplyr::arrange(desc(score))
           # join
@@ -317,7 +314,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
 ##########
 parameter_list$manual_names_annotation = c("C2-1" = "Neurons","C2-2"="Non-Neurons")
 parameter_list$min_specificity = 1.5 # ?
-parameter_list$min_specificity_sibling_children = 5
+parameter_list$min_specificity_sibling_children = 2.5
 parameter_list$limit_factor = 5
 parameter_list$max_score_siblings_children = 20
 parameter_list$reverse_order = TRUE

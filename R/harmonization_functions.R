@@ -39,3 +39,45 @@ read_embedding = function(filename_withpath,seurat_object=NULL,seurat_object_met
   }
   return(current_embedding)
 }
+
+##########
+### clear_clustering
+##########
+
+#' Eliminate small clusters from a vector of labels substituting with the labels of NN
+#' @param x vector of labels
+#' @param min_cells minimum number of cells to keep cluster
+#' @param nn_idx matrix of cells x k NN idx --> e.g. output of annoy or rann
+#' @return updated vector of labels
+
+clear_clustering = function(x,min_cells,nn_idx){
+  x = as.character(x)
+  new_x=x
+  # which clusters are too small ?
+  small_clusters = names(table(x)[table(x) < min_cells])
+  # go through small clusters and move cells to laregr clusters based on neighbors
+  if(length(small_clusters)>0){
+    #message("Removing ",length(small_clusters)," clusters")
+    for(i in 1:length(small_clusters)){
+      current_cluster = small_clusters[i]
+      which_idx = which(x == current_cluster)
+      # get idx for k NN
+      neighbor_idx = nn_idx[which_idx,]
+      # substitute with cluster labels
+      if(length(which_idx)>1){
+        neighbor_clusters = apply(neighbor_idx,1,function(z,cluster_vector){return(cluster_vector[z])},cluster_vector=x)
+        # extract that most common label in neighbors
+        clusters_vote = apply(neighbor_clusters,2,function(z,exclude_clusters){
+          return(names(sort(table(z),decreasing = TRUE))[! names(sort(table(z),decreasing = TRUE)) %in% exclude_clusters][1])
+        },exclude_clusters=small_clusters)
+      }else{
+        neighbor_clusters = x[neighbor_idx]
+        clusters_vote = names(sort(table(neighbor_clusters),decreasing = TRUE))[! names(sort(table(neighbor_clusters),decreasing = TRUE)) %in% small_clusters][1]
+      }
+      # overwrite cluster label
+      new_x[which_idx]=clusters_vote
+    }
+  }
+
+  return(new_x)
+}

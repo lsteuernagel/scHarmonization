@@ -29,10 +29,10 @@ param_list$integration_name = "scvi"
 param_list$categorical_covariates = c("Dataset",param_list$batch_var)
 param_list$continuous_covariates =character(0)
 param_list$n_layers = 3
-param_list$n_latent = 65
+param_list$n_latent = 85
 param_list$n_hidden = 256
 param_list$dropout_rate = 0.1
-param_list$max_epochs = 400
+param_list$max_epochs = 300
 param_list$early_stopping = FALSE
 param_list$dispersion = "gene"
 param_list$gene_likelihood = "zinb"
@@ -50,15 +50,27 @@ param_list$step_size_initial = 1
 param_list$include_low_res_initial = FALSE
 
 ## full clustering
-param_list$target_clusterN = 300
+param_list$target_clusterN = 400
 param_list$start_res = 1
-param_list$end_res = 40
+param_list$end_res = 50
 param_list$step_size = 1
 param_list$include_low_res = TRUE
+param_list$min_cells_valid = 5
 
 # mrtree
 param_list$clusters_for_mrtree_file = "mrtree_input_labels.txt"
 param_list$specificity_base = 0.001
+param_list$n_cores_markers = 4
+
+# pruning:
+param_list$min_cells = 5 # if beelow --> merge with neighbor
+param_list$min_specificity = 0.5 # min specificity for a sibling marker to count
+param_list$max_pvalue_prune = 0.01 # max pvalue for a sibling marker to count
+param_list$min_sibling_markers = 3 # how many sibling markers are required to not merge
+param_list$min_prune_level = 4 # highest level is 2 (1 does not exist because level is based on destination node)
+param_list$start_nodes_pruning_markers = c("K2-0","K2-1") # use this when there are multiple marker tables after splitting the marker detection
+param_list$old_prefix = "K"
+param_list$new_prefix = "C"
 
 # basic marker detection
 param_list$basic_marker_filename = "_inital_markers"
@@ -75,5 +87,8 @@ param_list$base = 2
 param_list$only.pos = TRUE
 param_list$batch_var = param_list$batch_var
 
+# annotation
+param_list$start_nodes_annotation_markers = c("C2-1","C2-2") # can also just be = start_nodes_pruning_markers  # use this when there are multiple marker tables after splitting the marker detection
+
 # save
-scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_2.json")
+scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_3.json")

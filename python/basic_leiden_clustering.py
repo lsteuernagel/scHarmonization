@@ -11,6 +11,8 @@ import sys
 import json
 import gc
 
+print(" Read parameters")
+
 # Parameters
 # get path to parameters and path json
 json_file = open(sys.argv[1])
@@ -32,12 +34,16 @@ step_size = parameter_dict["step_size"]
 include_low_res = parameter_dict["include_low_res"]
 n_neighbors = parameter_dict["k_param"]
 snn_name = "SNN_"+parameter_dict["integration_name"]
+min_cells_valid = parameter_dict["min_cells_valid"]
 
 #define resolution range, hardcoded atm
 resolutions = [round(x*step_size,3) for x in range(int(1/step_size)*start_res,int(1/step_size)*end_res+1)]
 if(include_low_res):
-  low_res_list = [0.1,0.25,0.5,0.75]
+  low_res_list = [0.001,0.005,0.01,0.05,0.1,0.25,0.5,0.75]
   resolutions = low_res_list + resolutions
+  
+  
+print(" Read anndata")
 
 # read adata
 adata = sc.read_h5ad(data_filepath_full)
@@ -59,13 +65,16 @@ adata.var = str_df
 # however sc.tl.leiden does not like this so I also copy the same adjacency matrix into the connectivities slot:
 adata.obsp['connectivities'] = adata.obsp['distances']
 
+print(" Run clustering")
+
 # clustering
 for res in resolutions:
         key_name = "leiden_clusters_"+str(res)
         sc.tl.leiden(adata,resolution=res,key_added=key_name,random_state=global_seed,neighbors_key='neighbors') # could use neighbors_key
-        print(" Ran leiden with resolution "+str(res)+" and found "+str(len(set(adata.obs[key_name])))+" clusters")
-        if(len(set(adata.obs[key_name])) >= target_clusterN):
-            print(" Reached "+str(len(set(adata.obs[key_name])))+" clusters")
+        value_counts = adata.obs[key_name].value_counts()
+        print(" Ran leiden with resolution "+str(res)+" and found "+str(len(set(adata.obs[key_name])))+" total clusters with "+str(len(value_counts[value_counts > min_cells_valid]))+" valid clusters")
+        if(len(value_counts[value_counts > min_cells_valid]) >= target_clusterN):
+            print(" Reached "+str(len(value_counts[value_counts > min_cells_valid]))+" valid clusters")
             break    
 
 #save
