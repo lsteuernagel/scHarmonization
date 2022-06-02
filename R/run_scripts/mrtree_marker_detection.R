@@ -29,7 +29,7 @@ features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){
 harmonized_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
 
 # load mrtree clustering
-mrtree_result = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_mrtree_clustering_results",".rds"))
+mrtree_result = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_mrtree_clustering_results",".rds"))
 
 # important: start node
 start_node = parameter_list$start_node
@@ -209,7 +209,9 @@ findMarkers_tree2 = function(seurat_object,edgelist,labelmat,n_cores=1,use_strat
 
 # get key objects
 edgelist = mrtree_result$edgelist[,1:2]
+message("loaded edglist with ",nrow(edgelist)," rows.")
 labelmat = mrtree_result$labelmat
+message("loaded labelmat with ",nrow(labelmat)," rows.")
 
 message("Object cells: ",ncol(harmonized_seurat_object),"  Labelmat cells: ",nrow(labelmat))
 
@@ -230,6 +232,10 @@ find_children = function(nodes,edges){
 
 # walk through tree:
 all_children = find_children(nodes = start_node, edges = edgelist[,1:2])
+if(length(all_children) < 3){
+  message("Cannot find enough children for starting node ",start_node," . Using all nodes in tree instead")
+  all_children =  unique(edges[,2])
+}
 
 # subset =
 edgelist = edgelist[edgelist$to %in% all_children,]

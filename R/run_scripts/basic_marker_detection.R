@@ -110,6 +110,9 @@ if(test.use=="wilcox-stratified"){
                                                                                           genre = "locally-best")
       all_markers_list[[paste0("c_",current_cluster)]]$cluster = current_cluster
       all_markers_list[[paste0("c_",current_cluster)]]$gene = rownames(all_markers_list[[paste0("c_",current_cluster)]])
+      if(base==2){
+        colnames(all_markers_list[[paste0("c_",current_cluster)]])[colnames(all_markers_list[[paste0("c_",current_cluster)]])=="avg_logFC"] = "avg_log2FC"
+      }
     }
   }
   all_markers = do.call(rbind, all_markers_list)

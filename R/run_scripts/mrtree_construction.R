@@ -94,6 +94,6 @@ cluster_object = list(labelmat = labelmat,
 ##########
 
 # save object as rds
-saveRDS(cluster_object,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_mrtree_clustering_results",".rds"))
+saveRDS(cluster_object,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_mrtree_clustering_results",".rds"))
 
 message("Finalized")

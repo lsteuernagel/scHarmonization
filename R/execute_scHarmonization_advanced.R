@@ -71,6 +71,7 @@ slurm_id_1 = stringr::str_remove(output_message,pattern = "Submitted batch job "
 
 # set params
 param_set = params_harmonization
+param_set$marker_suffix = "raw"
 # make unique id:
 job_id=digest::digest(param_set)
 # write to JSON as transfer file
@@ -112,35 +113,15 @@ output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",err
 slurm_id_4 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
 ##########
-### [11] Prune tree
+### [4b] Hierachical tree cluster markers ---> for HypoMap where we split into two subsets (neuron and non neuron)
 ##########
 
 # set params
 param_set = params_harmonization
-# make unique id:
-job_id=digest::digest(param_set)
-# write to JSON as transfer file
-param_file = paste0(param_path,"mrtree_construction_params_",job_id,".json")
-writeList_to_JSON(list_with_rows = param_set,filename = param_file)
-# not a loop
-script_path = "R/run_scripts/mrtree_construction.R"
-# set sbatch params:
-jobname = paste0("mrtree_construction_",job_id)
-outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
-errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
-dependency_ids = c(slurm_id_3)
-output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
-slurm_id_9 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
-
-
-##########
-### [12] Hierachical tree cluster markers re-run
-##########
-
-# TODO: only re run on clusters that actually changed!
-
-# set params
-param_set = params_harmonization
+param_set$n_cores_markers = 4
+param_set$marker_suffix = "raw"
+param_set$start_node = "K2-1" # "all" for everything
+#param_set$marker_suffix = "nonneuron"
 # make unique id:
 job_id=digest::digest(param_set)
 # write to JSON as transfer file
@@ -154,14 +135,100 @@ outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
 errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
 dependency_ids = c(slurm_id_3)
 output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
-slurm_id_9 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+slurm_id_4b = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+
+##########
+### [5] Prune tree
+##########
+
+# set params
+param_set = params_harmonization
+param_set$marker_suffix = "raw"
+# make unique id:
+job_id=digest::digest(param_set)
+# write to JSON as transfer file
+param_file = paste0(param_path,"mrtree_pruning_params_",job_id,".json")
+writeList_to_JSON(list_with_rows = param_set,filename = param_file)
+# not a loop
+script_path = "R/run_scripts/mrtree_pruning.R"
+# set sbatch params:
+jobname = paste0("mrtree_pruning_",job_id)
+outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
+errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
+dependency_ids = c(slurm_id_4,slurm_id_4b) ## Might need to adjust this !
+output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
+slurm_id_5 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+
+
+##########
+### [6] Hierachical tree cluster markers re-run
+##########
+
+# TODO: only re run on clusters that actually changed ?
+
+# set params
+param_set = params_harmonization
+param_set$n_cores_markers = 4
+param_set$marker_suffix = "pruned"
+param_set$start_node = "C2-1" # "all" for everything
+
+#param_set$marker_suffix = "nonneuron"
+# make unique id:
+job_id=digest::digest(param_set)
+# write to JSON as transfer file
+param_file = paste0(param_path,"mrtree_markers_params_",job_id,".json")
+writeList_to_JSON(list_with_rows = param_set,filename = param_file)
+# not a loop
+script_path = "R/run_scripts/mrtree_marker_detection.R"
+# set sbatch params:
+jobname = paste0("mrtree_markers_",job_id)
+outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
+errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
+dependency_ids = c(slurm_id_5)
+output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
+slurm_id_6 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+
+##########
+### [6b] Hierachical tree cluster markers re-run
+##########
+
+# TODO: only re run on clusters that actually changed ?
+
+# set params
+param_set = params_harmonization
+param_set$n_cores_markers = 4
+param_set$marker_suffix = "pruned"
+param_set$start_node = "C2-2" # "all" for everything
+
+#param_set$marker_suffix = "nonneuron"
+# make unique id:
+job_id=digest::digest(param_set)
+# write to JSON as transfer file
+param_file = paste0(param_path,"mrtree_markers_params_",job_id,".json")
+writeList_to_JSON(list_with_rows = param_set,filename = param_file)
+# not a loop
+script_path = "R/run_scripts/mrtree_marker_detection.R"
+# set sbatch params:
+jobname = paste0("mrtree_markers_",job_id)
+outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
+errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
+dependency_ids = c(slurm_id_5)
+output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
+slurm_id_6b = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+
+##########
+### [7] cluster annotation
+##########
+
+
+
 
 ##########
 ### [13] scMRMR
 ##########
 
 # TODO: still need to decide whether to include this part
-
+# probably not for now !
 
 ##########
 ### [14] propagate author cell types

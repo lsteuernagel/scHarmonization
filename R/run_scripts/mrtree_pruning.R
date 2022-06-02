@@ -2,7 +2,7 @@
 ### Load parameters and packages
 ##########
 
-message(Sys.time(),": Starting fast marker detection .." )
+message(Sys.time(),": Starting mrtree pruning .." )
 
 message(" Load parameters and packages ")
 
@@ -28,23 +28,11 @@ parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(
 #parameter_list$new_name_suffix=paste0(parameter_list$new_name_suffix,"_curated")
 #parameter_list$start_node = "K2-0"
 
-#need to add:
-parameter_list$min_cells = 5
-parameter_list$min_specificity = 0.5
-parameter_list$min_sibling_markers = 3
-parameter_list$max_pvalue_prune = 0.01
-parameter_list$min_prune_level = 4 # highest level is 2 (1 does not exist because level is based on destination node)
-parameter_list$start_nodes_pruning_markers = c("K2-0","K2-1")
-
-# read features to excludes
-features_exclude_list= jsonlite::read_json(parameter_list$genes_to_exclude_file)
-features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
-
 # load seurat
-#harmonized_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
+harmonized_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
 
 # load mrtree clustering
-mrtree_result = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_mrtree_clustering_results",".rds"))
+mrtree_result = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_mrtree_clustering_results",".rds"))
 
 
 # read all available marker tables if marker detection was run on multiple subsets !!
@@ -53,13 +41,22 @@ markers_comparisons_siblings_list =list()
 for(current_start_node in parameter_list$start_nodes_pruning_markers){
   # load markers all
   filename=paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",current_start_node,"_markers_all_",parameter_list$marker_suffix,".tsv")
-  if(file.exists(filename)){markers_comparisons_all_list[[current_start_node]] = data.table::fread(filename,data.table = F)}
+  if(file.exists(filename)){
+    markers_comparisons_all_list[[current_start_node]] = data.table::fread(filename,data.table = F)
+  }else{
+    message("Cannot find markers stored in : ",filename)
+  }
   # siblings
   filename_sib=paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",current_start_node,"_markers_siblings_",parameter_list$marker_suffix,".tsv")
-  if(file.exists(filename_sib)){markers_comparisons_siblings_list[[current_start_node]] = data.table::fread(filename_sib,data.table = F)}
+  if(file.exists(filename_sib)){
+    markers_comparisons_siblings_list[[current_start_node]] = data.table::fread(filename_sib,data.table = F)
+  }else{
+    message("Cannot find markers stored in : ",filename_sib)
+  }
 }
 markers_comparisons_all = as.data.frame(do.call(rbind,markers_comparisons_all_list))
 markers_comparisons_siblings  = as.data.frame(do.call(rbind,markers_comparisons_siblings_list))
+message("Sibling markers for: ",length(unique(markers_comparisons_siblings$cluster_id))," clusters available")
 
 
 ##########
@@ -69,6 +66,9 @@ markers_comparisons_siblings  = as.data.frame(do.call(rbind,markers_comparisons_
 # get key objects
 edgelist = mrtree_result$edgelist
 labelmat = mrtree_result$labelmat
+
+# add to seurat:
+harmonized_seurat_object@meta.data = cbind(harmonized_seurat_object@meta.data,labelmat)
 
 # find children in tree recusrively based on simple edgelist
 # find_children = function(nodes,edges){
@@ -92,6 +92,8 @@ labelmat = mrtree_result$labelmat
 ##########
 ### Run mrtree pruning based on markers
 ##########
+
+message(Sys.time(),": Prune clusters .." )
 
 # init edgelist and all_nodes
 edgelist = edgelist[,c("from","to","level")]
@@ -171,6 +173,8 @@ for(n in 1:length(all_nodes)){
 ### Create pruned edgelist
 ##########
 
+message(Sys.time(),": Update labels and save .." )
+
 edgelist_updated = edgelist
 labelmat_updated = labelmat
 merge_list2 = merge_list
@@ -201,8 +205,8 @@ for(i in 1:length(merge_list2)){
 ### Update labels in edgelist and labelmat
 ##########
 
-old_prefix = "K"
-new_prefix = "C"
+old_prefix = parameter_list$old_prefix # "K"
+new_prefix = parameter_list$new_prefix # "C"
 all_cluster_levels_updated = edgelist_updated %>% dplyr::group_by(clusterlevel) %>% dplyr::count()
 all_cluster_levels_updated$clusterlevel_new = paste0(all_cluster_levels_updated$clusterlevel %>% stringr::str_extract(old_prefix)  %>% stringr::str_replace(old_prefix, new_prefix),all_cluster_levels_updated$n)
 
@@ -230,6 +234,8 @@ labelmat_updated_new_labels = apply(labelmat_updated,2,function(x,new_labels){
   new_labels$new_node[match(x,new_labels$old_node)]
 },new_labels=new_labels)
 
+colnames(labelmat_updated_new_labels) = stringr::str_extract(labelmat_updated_new_labels[1,],pattern = paste0(parameter_list$new_prefix,"[0-9]+"))
+
 ##########
 ### Creat pruned result version
 ##########
@@ -254,7 +260,7 @@ updated_cluster_object = list(labelmat = labelmat_updated_new_labels,
 ### Save
 ##########
 
-saveRDS(cluster_object,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_pruned_mrtree_clustering_results",".rds"))
+saveRDS(updated_cluster_object,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_pruned_mrtree_clustering_results",".rds"))
 
 message("Finalized pruning")
 
