@@ -71,8 +71,8 @@ harmonized_seurat_object_test@meta.data = temp_meta
 ## i am using an eraly curation version for testing ....
 
 keep_cells = harmonized_seurat_object_test@meta.data$Cell_ID[!harmonized_seurat_object_test@meta.data$Author_Class_Curated_orig %in% c("Doublet","Unknown") ]
-curated_seurat_object = subset(harmonized_seurat_object_test,cells = keep_cells)
-curated_seurat_object@meta.data$Author_Class_Curated = curated_seurat_object@meta.data$Author_Class_Curated_orig # onyl for test object !
+curated_seurat_object_test = subset(harmonized_seurat_object_test,cells = keep_cells)
+curated_seurat_object_test@meta.data$Author_Class_Curated = curated_seurat_object_test@meta.data$Author_Class_Curated_orig # onyl for test object !
 
 ##########
 ### Updated curated object NN trees
@@ -82,10 +82,10 @@ curated_seurat_object@meta.data$Author_Class_Curated = curated_seurat_object@met
 
 # run umap and save model
 message(Sys.time(),": Build UMAP with ",parameter_list$k_param," n.neighbors ..." )
-curated_seurat_object = RunUMAP(curated_seurat_object,
+curated_seurat_object_test = RunUMAP(curated_seurat_object_test,
                                 reduction = parameter_list$integration_name,
                                 seed.use= parameter_list$global_seed,
-                                dims=1:ncol(curated_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
+                                dims=1:ncol(curated_seurat_object_test@reductions[[parameter_list$integration_name]]@cell.embeddings),
                                 reduction.name=paste0("umap_",parameter_list$integration_name),
                                 reduction.key = paste0("umap_",parameter_list$integration_name),
                                 verbose=F,
@@ -94,28 +94,33 @@ curated_seurat_object = RunUMAP(curated_seurat_object,
 
 # run seurat SNN annoy
 message(Sys.time(),": Build SNN with ",parameter_list$k_param," n.neighbors ..." )
-curated_seurat_object = FindNeighbors(curated_seurat_object,
+curated_seurat_object_test = FindNeighbors(curated_seurat_object_test,
                                       reduction=parameter_list$integration_name,
-                                      dims = 1:ncol(curated_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
+                                      dims = 1:ncol(curated_seurat_object_test@reductions[[parameter_list$integration_name]]@cell.embeddings),
                                       k.param = parameter_list$k_param,
                                       nn.method="annoy",
                                       annoy.metric=parameter_list$dist_type,
-                                      graph.name = paste0("SNN_",parameter_list$integration_name), verbose=TRUE)
+                                      graph.name = c(paste0("NN_",parameter_list$integration_name),paste0("SNN_",parameter_list$integration_name)),
+                                      verbose=TRUE)
+#curated_seurat_object_test@graphs$SNN_scvi
 
 ##########
 ### Save
 ##########
 
-DimPlot(curated_seurat_object,group.by = "Author_Class_Curated",raster = F,reduction = "umap_scvi",label=TRUE,label.size = 4)
+DimPlot(curated_seurat_object_test,group.by = "Author_Class_Curated",raster = F,reduction = "umap_scvi",label=TRUE,label.size = 4)
 
 # name
 file_name_prefix = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated")
 
 # save data to rds
-saveRDS(curated_seurat_object,paste0(file_name_prefix,".rds"))
+saveRDS(curated_seurat_object_test,paste0(file_name_prefix,".rds"))
+
+# remove NN to save SNN when converting to anndata!
+curated_seurat_object_test@graphs[[paste0("NN_",parameter_list$integration_name)]] =NULL
 
 # save h5seurat
-SeuratDisk::SaveH5Seurat(object = curated_seurat_object,filename = paste0(file_name_prefix,".h5seurat"), overwrite = TRUE, verbose = TRUE)
+SeuratDisk::SaveH5Seurat(object = curated_seurat_object_test,filename = paste0(file_name_prefix,".h5seurat"), overwrite = TRUE, verbose = TRUE)
 
 # save to anndata
 SeuratDisk::Convert( paste0(file_name_prefix,".h5seurat"), dest =  paste0(file_name_prefix,".h5ad"),assay="RNA",verbose=TRUE,overwrite=TRUE)

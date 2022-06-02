@@ -197,24 +197,25 @@ curated_seurat_object = subset(harmonized_seurat_object,cells = keep_cells)
 #run umap and save model
 message(Sys.time(),": Build UMAP with ",parameter_list$k_param," n.neighbors ..." )
 curated_seurat_object = RunUMAP(curated_seurat_object,
-                                   reduction = parameter_list$integration_name,
-                                   seed.use= parameter_list$global_seed,
-                                   dims=1:ncol(curated_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
-                                   reduction.name=paste0("umap_",parameter_list$integration_name),
-                                   reduction.key = paste0("umap_",parameter_list$integration_name),
-                                   verbose=F,
-                                   n.neighbors = parameter_list$k_param,
-                                   return.model = TRUE)
+                                reduction = parameter_list$integration_name,
+                                seed.use= parameter_list$global_seed,
+                                dims=1:ncol(curated_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
+                                reduction.name=paste0("umap_",parameter_list$integration_name),
+                                reduction.key = paste0("umap_",parameter_list$integration_name),
+                                verbose=F,
+                                n.neighbors = parameter_list$k_param,
+                                return.model = TRUE)
 
 # run seurat SNN annoy
 message(Sys.time(),": Build SNN with ",parameter_list$k_param," n.neighbors ..." )
 curated_seurat_object = FindNeighbors(curated_seurat_object,
-                                         reduction=parameter_list$integration_name,
-                                         dims = 1:ncol(curated_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
-                                         k.param = parameter_list$k_param,
-                                         nn.method="annoy",
-                                         annoy.metric=parameter_list$dist_type,
-                                         graph.name = paste0("SNN_",parameter_list$integration_name), verbose=TRUE)
+                                      reduction=parameter_list$integration_name,
+                                      dims = 1:ncol(curated_seurat_object@reductions[[parameter_list$integration_name]]@cell.embeddings),
+                                      k.param = parameter_list$k_param,
+                                      nn.method="annoy",
+                                      annoy.metric=parameter_list$dist_type,
+                                      graph.name = c(paste0("NN_",parameter_list$integration_name),paste0("SNN_",parameter_list$integration_name)),
+                                      verbose=TRUE)
 
 ##########
 ### Save
@@ -225,6 +226,9 @@ file_name_prefix = paste0(parameter_list$harmonization_folder_path,parameter_lis
 
 # save data to rds
 saveRDS(curated_seurat_object,paste0(file_name_prefix,".rds"))
+
+# remove NN to save SNN when converting to anndata!
+curated_seurat_object_test@graphs[[paste0("NN_",parameter_list$integration_name)]] =NULL
 
 # save h5seurat
 SeuratDisk::SaveH5Seurat(object = curated_seurat_object,filename = paste0(file_name_prefix,".h5seurat"), overwrite = TRUE, verbose = TRUE)
