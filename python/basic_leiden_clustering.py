@@ -35,11 +35,12 @@ include_low_res = parameter_dict["include_low_res"]
 n_neighbors = parameter_dict["k_param"]
 snn_name = "SNN_"+parameter_dict["integration_name"]
 min_cells_valid = parameter_dict["min_cells_valid"]
+additional_clustering_suffix = parameter_dict["additional_clustering_suffix"]
 
 #define resolution range, hardcoded atm
 resolutions = [round(x*step_size,3) for x in range(int(1/step_size)*start_res,int(1/step_size)*end_res+1)]
 if(include_low_res):
-  low_res_list = [0.001,0.005,0.01,0.05,0.1,0.25,0.5,0.75]
+  low_res_list = [0.001,0.005,0.01,0.05,0.1,0.175,0.25,0.5,0.75]
   resolutions = low_res_list + resolutions
   
   
@@ -79,7 +80,7 @@ for res in resolutions:
 
 #save
 meta_subset = adata.obs.filter(regex=("leiden_clusters_"))
-meta_subset.to_csv(results_path+new_name_suffix+"_leiden_clustering.txt", sep='\t',index=True)
+meta_subset.to_csv(results_path+new_name_suffix+additional_clustering_suffix+"_leiden_clustering.txt", sep='\t',index=True)
 
 print(" Finalized clustering")
 

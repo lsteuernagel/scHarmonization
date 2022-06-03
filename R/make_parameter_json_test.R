@@ -10,6 +10,7 @@ param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuer
 # for final merged object:
 param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_downsampled_example.rds"#
 param_list$new_name_suffix = "hypoMap_test"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"
+param_list$additional_clustering_suffix = ""
 
 # signature for evaluation
 param_list$genes_to_exclude_file = "data/features_exclude_list2.json"

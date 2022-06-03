@@ -62,8 +62,8 @@ markers_comparisons_siblings  = as.data.frame(do.call(rbind,markers_comparisons_
 message("All markers for: ",length(unique(markers_comparisons_all$cluster_id))," clusters available")
 message("Sibling markers for: ",length(unique(markers_comparisons_siblings$cluster_id))," clusters available")
 
-hypoMap_test_curated_C21_markers_all_pruned = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization_test/hypoMap_test_curated_C2-1_markers_all_pruned.tsv")
-hypoMap_test_curated_C21_markers_siblings_pruned = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization_test/hypoMap_test_curated_C2-1_markers_siblings_pruned.tsv")
+# hypoMap_test_curated_C21_markers_all_pruned = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization_test/hypoMap_test_curated_C2-1_markers_all_pruned.tsv")
+# hypoMap_test_curated_C21_markers_siblings_pruned = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization_test/hypoMap_test_curated_C2-1_markers_siblings_pruned.tsv")
 
 ##########
 ### Load parameters and packages
@@ -84,16 +84,6 @@ all_nodes = unique(edgelist$to)
 ### annotate_tree
 ##########
 
-find_children = function(nodes,edges){
-  current_children = edges$to[edges$from %in% nodes]
-  #print(paste0(current_children,collapse = "|"))
-  if(length(current_children)>0){
-    all_children = c(current_children,find_children(current_children,edges))
-  }else{
-    all_children = current_children
-  }
-  return(all_children)
-}
 
 #' Add gene absed annotation to tree labels
 #' @param seurat_object seurat_object to call FindMarkers
@@ -140,7 +130,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
     current_node = all_nodes[n]
     parent_node = edgelist$from[edgelist$to==current_node]
     sibling_nodes = edgelist$to[edgelist$from==parent_node & edgelist$to != current_node]
-    children_nodes = find_children(current_node,edgelist)
+    children_nodes = scUtils::find_children(current_node,edgelist)
     direct_children_nodes = edgelist$to[edgelist$from==current_node]
     current_level = edgelist$clusterlevel[edgelist$to==current_node]
 
@@ -280,7 +270,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
     # add to list
     annotation_list[[current_node]] = cluster_name
     if(nrow(potential_descriptive_markers)){
-      descriptive_markers_list[[current_node]] = potential_descriptive_markers %>% dplyr::select(cluster_id,parent,gene,p_val_adj,avg_logFC,pct.1,pct.2,specificity,score,score_siblings,score_siblings_children,avg_score,mult_score)
+      descriptive_markers_list[[current_node]] = potential_descriptive_markers %>% dplyr::select(cluster_id,parent,gene,p_val_adj,avg_log2FC,pct.1,pct.2,specificity,score,score_siblings,score_siblings_children,avg_score,mult_score)
     }
   }
   # also save a list of the good marker genes
@@ -337,34 +327,35 @@ annotation_results = annotate_tree(edgelist = edgelist,
 message("Formating annotation results")
 
 # remove existing if running again on same object:
-#seurat_object_harmonized@meta.data = seurat_object_harmonized@meta.data[,!grepl("K*\\_pruned",colnames(seurat_object_harmonized@meta.data))]
+#harmonized_seurat_object@meta.data = harmonized_seurat_object@meta.data[,!grepl("K*\\_pruned",colnames(harmonized_seurat_object@meta.data))]
 # add to seurat
-seurat_object_harmonized@meta.data = cbind(seurat_object_harmonized@meta.data,temp)
+harmonized_seurat_object@meta.data = cbind(harmonized_seurat_object@meta.data,temp)
 
 ## get annotation names
+new_pruned_names = ""
 annotation_df = annotation_results$annotation_df
 annotation_df$clean_names[annotation_df$clean_names==""] = "hypothalamus"
-cell_cluster_map =seurat_object_harmonized@meta.data[,c("Cell_ID",new_pruned_names)] %>% tidyr::gather(-Cell_ID,key="clusterlevel",value="cluster_id")
+cell_cluster_map =harmonized_seurat_object@meta.data[,c("Cell_ID",new_pruned_names)] %>% tidyr::gather(-Cell_ID,key="clusterlevel",value="cluster_id")
 cell_cluster_map$clusterlevel = gsub("_pruned","",cell_cluster_map$clusterlevel)
 annotation_df_wide = annotation_df%>% dplyr::left_join(cell_cluster_map,by=c("clusterlevel"="clusterlevel","cluster_id"="cluster_id")) %>%
   dplyr::select(Cell_ID,clusterlevel,clean_names)  %>% tidyr::spread(key = clusterlevel,value = clean_names)
 colnames(annotation_df_wide)[2:ncol(annotation_df_wide)] = paste0(colnames(annotation_df_wide)[2:ncol(annotation_df_wide)],"_named")
 
 # remove existing if running again on same object:
-seurat_object_harmonized@meta.data = seurat_object_harmonized@meta.data[,!grepl("K*\\_named",colnames(seurat_object_harmonized@meta.data))]
+harmonized_seurat_object@meta.data = harmonized_seurat_object@meta.data[,!grepl("C*\\_named",colnames(harmonized_seurat_object@meta.data))]
 # add to seurat
-seurat_object_harmonized@meta.data= dplyr::left_join(seurat_object_harmonized@meta.data,annotation_df_wide,by="Cell_ID")
-rownames(seurat_object_harmonized@meta.data) =  seurat_object_harmonized@meta.data$Cell_ID
+harmonized_seurat_object@meta.data= dplyr::left_join(harmonized_seurat_object@meta.data,annotation_df_wide,by="Cell_ID")
+rownames(harmonized_seurat_object@meta.data) =  harmonized_seurat_object@meta.data$Cell_ID
 
 #data.table::fwrite(annotation_df,file = paste0(harmonization_file_path,project_name,"_annotation_labels.txt") ,sep="\t")
 
 # add annotation_df to seurat misc
 annotation_df_add = annotation_df %>% dplyr::select(cluster_id,cluster_name = clean_names, clusterlevel, ncells)
-seurat_object_harmonized@misc$annotations = annotation_df_add
+harmonized_seurat_object@misc$annotations = annotation_df_add
 
 ## clean markers
 descriptive_markers_df = annotation_results$descriptive_markers_df
 descriptive_markers_df = dplyr::left_join(descriptive_markers_df,annotation_df,by=c("cluster_id"="cluster_id"))
-seurat_object_harmonized@misc$curated_markers = descriptive_markers_df
+harmonized_seurat_object@misc$curated_markers = descriptive_markers_df
 #data.table::fwrite(descriptive_markers_df,file = paste0(harmonization_file_path,project_name,"_curated_markers.txt") ,sep="\t")
 

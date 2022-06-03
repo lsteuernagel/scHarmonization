@@ -14,7 +14,7 @@ param_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_par
 log_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_slurmlogs/"
 
 # load json file with all other information
-params_harmonization = jsonlite::read_json("data/parameters_harmonization_v2_3.json")
+params_harmonization = jsonlite::read_json("data/parameters_harmonization_v2_4.json")
 # if some fields are lists --> unlist
 params_harmonization = lapply(params_harmonization,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
@@ -40,6 +40,14 @@ writeList_to_JSON = function (list_with_rows, filename){
 
 # set additional parameters for scvi
 param_set = params_harmonization
+## full clustering extra
+# param_set$target_clusterN = 600
+# param_set$start_res = 28
+# param_set$end_res = 50
+# param_set$step_size = 1
+# param_set$include_low_res = FALSE
+# param_set$min_cells_valid = 5
+# param_set$additional_clustering_suffix = "_extracluster28"
 # make unique id:
 job_id=digest::digest(param_set)
 param_set$job_id = job_id
@@ -62,7 +70,7 @@ slurm_id_1 = stringr::str_remove(output_message,pattern = "Submitted batch job "
 
 ## Run selection script and save file in
 
-# parameter_list$clusters_for_mrtree_file,".rds"
+# parameter_list$clusters_for_mrtree_file
 
 
 ##########
@@ -95,7 +103,7 @@ slurm_id_3 = stringr::str_remove(output_message,pattern = "Submitted batch job "
 param_set = params_harmonization
 param_set$n_cores_markers = 4
 param_set$marker_suffix = "raw"
-param_set$start_node = "K2-0" # "all" for everything
+param_set$start_node = "K2-0" # "all" for everything --> then 4b is not necessary
 #param_set$marker_suffix = "nonneuron"
 # make unique id:
 job_id=digest::digest(param_set)
