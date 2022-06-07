@@ -27,6 +27,12 @@ parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(
 # parameter_list$marker_suffix = "pruned"
 # parameter_list$new_name_suffix=paste0(parameter_list$new_name_suffix,"_curated")
 # parameter_list$start_node = "C2-1"
+# test on full
+parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_4.json")
+parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
+parameter_list$marker_suffix = "pruned"
+parameter_list$new_name_suffix=paste0(parameter_list$new_name_suffix,"_curated")
+parameter_list$start_node = "C2-1"
 
 # read features to excludes
 features_exclude_list= unlist(jsonlite::read_json(parameter_list$genes_to_exclude_file))
@@ -302,14 +308,18 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
 ##########
 ### Run annotation
 ##########
-parameter_list$manual_names_annotation = c("C2-1" = "Neurons","C2-2"="Non-Neurons")
+
+table(curated_seurat_object@meta.data$Author_Class_Curated,curated_seurat_object@meta.data$C23)
+
+parameter_list$manual_names_annotation = c("C2-1" = "Neurons","C2-2"="Non-Neurons","C7-1" = "GLUT","C7-2"= "GABA","C7-3"="Astro-Ependymal","C7-4" = "Oligo" ,
+                                           "C7-5" = "Immune","C7-6" = "ParsTuber", "C7-7" = "Vascular","C23-22" ="Mural","C23-23" = "Endothelial")
 parameter_list$min_specificity = 1.5 # ?
 parameter_list$min_specificity_sibling_children = 2.5
 parameter_list$limit_factor = 5
 parameter_list$max_score_siblings_children = 20
 parameter_list$reverse_order = TRUE
 
-annotation_results = annotate_tree(edgelist = edgelist,
+annotation_results = annotate_tree(edgelist = edgelist[1:32,],
                                    labelmat = labelmat,
                                    markers_comparisons_all = markers_comparisons_all,
                                    markers_comparisons_siblings = markers_comparisons_siblings,
@@ -329,7 +339,9 @@ message("Formating annotation results")
 # remove existing if running again on same object:
 #harmonized_seurat_object@meta.data = harmonized_seurat_object@meta.data[,!grepl("K*\\_pruned",colnames(harmonized_seurat_object@meta.data))]
 # add to seurat
-harmonized_seurat_object@meta.data = cbind(harmonized_seurat_object@meta.data,temp)
+#harmonized_seurat_object@meta.data = cbind(harmonized_seurat_object@meta.data,temp)
+
+a1=annotation_results$descriptive_markers_df
 
 ## get annotation names
 new_pruned_names = ""

@@ -60,7 +60,10 @@ param_list$min_cells_valid = 3
 
 # mrtree
 param_list$clusters_for_mrtree_file = "mrtree_input_labels.txt"
+param_list$use_recon_labelmat = TRUE # avoids skipping the lowest level of cluster when building the matrix !
 param_list$specificity_base = 0.001
+param_list$n_cores_markers = 4
+
 # pruning:
 param_list$min_cells = 5 # if beelow --> merge with neighbor
 param_list$min_specificity = 0.5 # min specificity for a sibling marker to count

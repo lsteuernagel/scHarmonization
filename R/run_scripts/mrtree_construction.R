@@ -62,26 +62,33 @@ saveRDS(mrtree_res,paste0(parameter_list$harmonization_folder_path,parameter_lis
 message(Sys.time(),": Create mrtree ouput list" )
 
 # make labelmat with colnames included
-labelmat=mrtree_res$labelmat.mrtree
+if(parameter_list$use_recon_labelmat){
+  labelmat=mrtree_res$labelmat.recon
+  Ks.recon = apply(labelmat, 2, function(y) length(unique(y)))
+  unique.idx = 1:length(Ks.recon) # don#t remove last col
+  colnames(labelmat) = paste0("K", Ks.recon[unique.idx])
+}else{
+  labelmat=mrtree_res$labelmat.mrtree
+}
+
+# build dataframe with labels
 n=nrow(labelmat)
 backup = colnames(labelmat)
 labelmat = matrix(paste(matrix(rep(colnames(labelmat),each=n), nrow = n), labelmat, sep='-'), nrow = n)
 colnames(labelmat)=backup
 df = as.data.frame(unique(labelmat), stringsAsFactors = F)
 
-# add to seuratobject metadata
-# seurat_object_harmonized@meta.data = cbind(seurat_object_harmonized@meta.data,labelmat)
-
 # save in data.tree format
 require(data.tree)
 df$pathString = apply(df, 1, function(x) paste(c('all', x), collapse='/'))
 tree.datatree = data.tree::as.Node(df)
-# export edgelist
+
+# export edgelist  and nodelist from data.tree
 edges= data.tree::ToDataFrameNetwork(tree.datatree,"isLeaf","level","count","totalCount","height")
 nodes = data.frame(id = c("all",as.character(unique(edges$to))),label=c("all",as.character(unique(edges$to))))
 nodes = rbind(c("all",FALSE,1,5,max(edges$height)+1),edges[,2:ncol(edges)]) %>% dplyr::rename(id = to) %>% dplyr::mutate(label = id)
 
-# make cluster object ? and add to misc
+# make cluster object (list)
 cluster_object = list(labelmat = labelmat,
                       edgelist = edges ,
                       nodelist = nodes,

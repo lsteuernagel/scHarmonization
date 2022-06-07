@@ -3,7 +3,7 @@
 ##########
 
 # load json file with all other information
-parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_2.json")
+parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_4.json")
 # if some fields are lists --> unlist
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
@@ -64,7 +64,7 @@ p1
 #####
 DefaultAssay(harmonized_seurat_object) <- "RNA"
 
-p1=FeaturePlot(harmonized_seurat_object,features = "Dynap",raster = F,order=TRUE)
+p1=FeaturePlot(harmonized_seurat_object,features = "Rab7b",raster = F,order=TRUE)
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 #p1
 
@@ -188,11 +188,82 @@ keep_cells = harmonized_seurat_object@meta.data$Cell_ID[!harmonized_seurat_objec
 nrow(harmonized_seurat_object@meta.data) - length(keep_cells) # remove 677 cells
 curated_seurat_object = subset(harmonized_seurat_object,cells = keep_cells)
 
+
+##########
+### second curation round
+##########
+
+# Ideally I should ahve used a even higeh resolution for the inital clustering above
+# When building the clusters for mrtree, I realized that I should take an additional loook at some small clusters:
+
+## load other clusters:
+hypoMap_test_additional_leiden_clustering = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_leiden_clustering_400.txt"),data.table = F)
+clusters_to_add = hypoMap_test_additional_leiden_clustering[,c("Cell_ID","leiden_clusters_27")] %>% dplyr::rename(additional_clustering = leiden_clusters_27 )
+
+temp_meta = dplyr::left_join(curated_seurat_object@meta.data,clusters_to_add,by="Cell_ID") %>% as.data.frame()
+rownames(temp_meta) = temp_meta$Cell_ID
+curated_seurat_object@meta.data = temp_meta
+
+cluster_column = "additional_clustering"
+
+#  c("360","330","386","364","377","321","325","314")
+
+## helper code toc check on clusters:
+cluster_target = "298"
+#class_per_cluster[class_per_cluster[,cluster_column] == cluster_target,]
+#head(basic_markers[basic_markers$cluster == cluster_target,],10)
+#tmp_markers = basic_markers[basic_markers$cluster == cluster_target,]
+table(curated_seurat_object@meta.data$Dataset[curated_seurat_object@meta.data[,cluster_column] == cluster_target])
+table(curated_seurat_object@meta.data$Author_Class_Curated[curated_seurat_object@meta.data[,cluster_column] == cluster_target])
+cellsh = curated_seurat_object@meta.data$Cell_ID[curated_seurat_object@meta.data[,cluster_column] == cluster_target]
+p1 = DimPlot(curated_seurat_object,group.by = "Dataset",raster = F,cells.highlight = cellsh,sizes.highlight = 0.1)+NoLegend()
+scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
+
+curated_seurat_object@meta.data$Author_Class_Curated[curated_seurat_object@meta.data[,cluster_column]=="360"] = "Doublet"
+curated_seurat_object@meta.data$Author_Class_Curated[curated_seurat_object@meta.data[,cluster_column]=="330"] = "Doublet"
+curated_seurat_object@meta.data$Author_Class_Curated[curated_seurat_object@meta.data[,cluster_column]=="386"] = "Differentiating"#
+curated_seurat_object@meta.data$Author_Class_Curated[curated_seurat_object@meta.data[,cluster_column]=="364"] = "Differentiating"#
+curated_seurat_object@meta.data$Author_Class_Curated[curated_seurat_object@meta.data[,cluster_column]=="377"] = "Differentiating"#
+curated_seurat_object@meta.data$Author_Class_Curated[curated_seurat_object@meta.data[,cluster_column]=="321"] = "Astrocytes"# unknown !?
+curated_seurat_object@meta.data$Author_Class_Curated[curated_seurat_object@meta.data[,cluster_column]=="325"] = "Unknown"#
+curated_seurat_object@meta.data$Author_Class_Curated[curated_seurat_object@meta.data[,cluster_column]=="314"] = "Doublet"#
+
+#curated_seurat_object@meta.data$log_nCount_RNA = log2(curated_seurat_object@meta.data$nCount_RNA)
+p1=FeaturePlot(curated_seurat_object,features = "Slc32a1",raster = F,order=TRUE)
+scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
+
+
+##########
+### Subset object again
+##########
+
+keep_cells = curated_seurat_object@meta.data$Cell_ID[!curated_seurat_object@meta.data$Author_Class_Curated %in% c("Doublet","Unknown","Exclude") ]
+nrow(curated_seurat_object@meta.data) - length(keep_cells) # remove 677 cells
+curated_seurat_object = subset(curated_seurat_object,cells = keep_cells)
+
+p1 = DimPlot(curated_seurat_object,group.by = "Author_Class_Curated",raster = F)
+scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
+
+# manually remove another 26 cells
+# cells_selected = CellSelector(p1)
+#cell_to_remove=c()
+cell_to_remove = unique(c(cell_to_remove,cells_selected))
+keep_cells = curated_seurat_object@meta.data$Cell_ID[!curated_seurat_object@meta.data$Cell_ID %in% cell_to_remove]
+curated_seurat_object = subset(curated_seurat_object,cells = keep_cells)
+
 ##########
 ### Updated curated object NN trees
 ##########
 
+## clean up metadata:
+# colnames(curated_seurat_object@meta.data)
+# temp = curated_seurat_object@meta.data  %>% dplyr::select(-seurat_clusters,-log_nCount_RNA,-leiden_clusters_0,-leiden_clusters_0.01,-leiden_clusters_0.05,-leiden_clusters_0.25,-leiden_clusters_1, -leiden_clusters_5, -leiden_clusters_27) %>%
+#   dplyr::rename()
+# rownames(temp) = temp$Cell_ID
+# curated_seurat_object@meta.data = temp
+
 ## also re-run
+parameter_list$k_param = 25
 
 #run umap and save model
 message(Sys.time(),": Build UMAP with ",parameter_list$k_param," n.neighbors ..." )
@@ -203,7 +274,7 @@ curated_seurat_object = RunUMAP(curated_seurat_object,
                                 reduction.name=paste0("umap_",parameter_list$integration_name),
                                 reduction.key = paste0("umap_",parameter_list$integration_name),
                                 verbose=F,
-                                n.neighbors = parameter_list$k_param,
+                                n.neighbors = parameter_list$k_param, # parameter_list$k_param,
                                 return.model = TRUE)
 
 # run seurat SNN annoy
@@ -216,6 +287,8 @@ curated_seurat_object = FindNeighbors(curated_seurat_object,
                                       annoy.metric=parameter_list$dist_type,
                                       graph.name = c(paste0("NN_",parameter_list$integration_name),paste0("SNN_",parameter_list$integration_name)),
                                       verbose=TRUE)
+
+
 
 ##########
 ### Save
@@ -234,7 +307,7 @@ curated_seurat_object@assays[["RNA"]]@scale.data <- dummy[,-1] # error is okay
 saveRDS(curated_seurat_object,paste0(file_name_prefix,".rds"))
 
 # remove NN to save SNN when converting to anndata!
-curated_seurat_object_test@graphs[[paste0("NN_",parameter_list$integration_name)]] =NULL
+curated_seurat_object@graphs[[paste0("NN_",parameter_list$integration_name)]] =NULL
 
 # save h5seurat
 SeuratDisk::SaveH5Seurat(object = curated_seurat_object,filename = paste0(file_name_prefix,".h5seurat"), overwrite = TRUE, verbose = TRUE)

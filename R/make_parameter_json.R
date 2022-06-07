@@ -60,14 +60,15 @@ param_list$min_cells_valid = 5
 
 # mrtree
 param_list$clusters_for_mrtree_file = "mrtree_input_labels.txt"
+param_list$use_recon_labelmat = TRUE # avoids skipping the lowest level of cluster when building the matrix !
 param_list$specificity_base = 0.001
 param_list$n_cores_markers = 4
 
 # pruning:
 param_list$min_cells = 5 # if beelow --> merge with neighbor
-param_list$min_specificity = 0.5 # min specificity for a sibling marker to count
+param_list$min_specificity = 1 # min specificity for a sibling marker to count
 param_list$max_pvalue_prune = 0.001 # max pvalue for a sibling marker to count
-param_list$min_sibling_markers = 3 # how many sibling markers are required to not merge
+param_list$min_sibling_markers = 5 # how many sibling markers are required to not merge
 param_list$min_prune_level = 4 # highest level is 2 (1 does not exist because level is based on destination node)
 param_list$start_nodes_pruning_markers = c("K2-0","K2-1") # use this when there are multiple marker tables after splitting the marker detection
 param_list$old_prefix = "K"
