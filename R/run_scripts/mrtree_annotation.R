@@ -98,6 +98,7 @@ all_nodes = unique(edgelist$to)
 #' @param markers_comparisons_all cluster markers for all clusters in labelmat. expects format from run_marker_detection.R
 #' @param markers_comparisons_siblings cluster markers vs sibling for all clusters in labelmat. expects format from run_marker_detection.R
 #' @param manual_names a named vector with names of clusters in edgelist --> will overwrite with manual names
+#' @param overwrite_with_manual whether to overwrite the full tree until this point with the manual name or just append similar to the best gene. defaults to FALSE
 #' @param manual_exclude_genes a set of genes that should not be included in anno
 #' @param max_pval_adj max pavlue allowed for a marker to be considered
 #' @param min_specificity min_specificity allowed for a marker to be considered
@@ -110,7 +111,7 @@ all_nodes = unique(edgelist$to)
 #' @param max_score_siblings_children todo: add explanation
 #' @return dataframe with new labels for each cluster in edgelist$to
 
-annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_comparisons_siblings,preferred_genes=character(0),manual_names=c(),manual_exclude_genes=character(0),
+annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_comparisons_siblings,preferred_genes=character(0),manual_names=c(),overwrite_with_manual=FALSE,manual_exclude_genes=character(0),
                          max_pval_adj=0.0001, min_specificity = 0.5,min_specificity_sibling_children=10,scale_preferred=2,min_pct2_score=0.01,min_cells=20,limit_factor=5,max_score_siblings_children=20,
                          reverse_order = FALSE){
   # init edgelist and all_nodes
@@ -152,7 +153,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
     # initiate vector with genes that should be excluded!
     exclude_genes=c(manual_exclude_genes)
 
-    message("nrow(potential_descriptive_markers) 1: ",nrow(potential_descriptive_markers))
+   # message("nrow(potential_descriptive_markers) 1: ",nrow(potential_descriptive_markers))
 
     # eliminate parent and sibling names
     reserved_genes=c()
@@ -204,7 +205,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
       }else{
         potential_descriptive_markers$score_siblings_children = 0
       }
-      message("nrow(potential_descriptive_markers): ",nrow(potential_descriptive_markers))
+      #message("nrow(potential_descriptive_markers): ",nrow(potential_descriptive_markers))
 
       # check siblings and filter to genes that are also markers to siblings!
       if(length(sibling_nodes)>0){
@@ -270,8 +271,13 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
       name_gene = manual_names[current_node]
     }
     # update full cluster_name
-    cluster_name = paste0(parent_name,".",name_gene)
-    message(current_node,": name: ",cluster_name)
+    if(overwrite_with_manual & current_node %in% names(manual_names)){
+      cluster_name = name_gene
+      message(current_node,": name: ",cluster_name)
+    }else{
+      cluster_name = paste0(parent_name,".",name_gene)
+      message(current_node,": name: ",cluster_name)
+    }
 
     # add to list
     annotation_list[[current_node]] = cluster_name
@@ -284,6 +290,8 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
 
   # bind results and format
   annotation_df = as.data.frame(do.call(rbind,annotation_list))
+  colnames(annotation_df) = "V1"
+  #print(head(annotation_df))
   annotation_df = annotation_df %>% dplyr::rename(Map_CellType=V1) %>% dplyr::mutate(cluster_id = rownames(annotation_df))
   if(reverse_order){
     annotation_df$Map_CellType = sapply(annotation_df$Map_CellType,function(x){paste0(rev(strsplit(x,split = "\\.")[[1]]),collapse = ".")})
@@ -311,20 +319,22 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
 
 table(curated_seurat_object@meta.data$Author_Class_Curated,curated_seurat_object@meta.data$C23)
 
-parameter_list$manual_names_annotation = c("C2-1" = "Neurons","C2-2"="Non-Neurons","C7-1" = "GLUT","C7-2"= "GABA","C7-3"="Astro-Ependymal","C7-4" = "Oligo" ,
-                                           "C7-5" = "Immune","C7-6" = "ParsTuber", "C7-7" = "Vascular","C23-22" ="Mural","C23-23" = "Endothelial")
+parameter_list$manual_names_annotation = c("C2-1" = "Neurons","C2-2"="Non-Neurons","C7-1" = "vGLUT","C7-2"= "GABA","C7-3"="Astro-Ependymal","C7-4" = "Oligo+Precursor" ,
+                                           "C7-5" = "Immune","C7-6" = "ParsTuber", "C7-7" = "Vascular","C23-22" ="Mural","C23-23" = "Endothelial","C23-16"="Ependymocytes","C23-18"="Oligodendrocytes",,"C23-19"="OPC",
+                                           "C23-12"="GABA-1","C23-11"="GABA-2","C23-15"="GABA-Chat","C23-10"="GABA-3","C23-13"="GABA-4","C23-14"="GABA-Coch","C23-2"="vGLUT-2","C23-1"="vGLUT-1")
 parameter_list$min_specificity = 1.5 # ?
 parameter_list$min_specificity_sibling_children = 2.5
 parameter_list$limit_factor = 5
 parameter_list$max_score_siblings_children = 20
 parameter_list$reverse_order = TRUE
 
-annotation_results = annotate_tree(edgelist = edgelist[1:32,],
+annotation_results = annotate_tree(edgelist = edgelist,#[1:32,],#edgelist = edgelist[1:291,],
                                    labelmat = labelmat,
                                    markers_comparisons_all = markers_comparisons_all,
                                    markers_comparisons_siblings = markers_comparisons_siblings,
                                    preferred_genes=character(0),
                                    manual_names= parameter_list$manual_names_annotation,
+                                   overwrite_with_manual = TRUE,
                                    manual_exclude_genes=features_exclude_list,
                                    max_pval_adj= parameter_list$max_pvalue_prune,
                                    min_specificity = parameter_list$min_specificity,
@@ -341,6 +351,7 @@ message("Formating annotation results")
 # add to seurat
 #harmonized_seurat_object@meta.data = cbind(harmonized_seurat_object@meta.data,temp)
 
+a0=annotation_results$annotation_df
 a1=annotation_results$descriptive_markers_df
 
 ## get annotation names

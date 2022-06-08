@@ -60,6 +60,56 @@ message("Sibling markers for: ",length(unique(markers_comparisons_siblings$clust
 
 
 ##########
+### Further clean up marker genes to remove batch expressed genes:
+##########
+
+entropy_fun = function(x,logfun ="log2"){
+  log_vec = do.call(logfun,list(x))
+  log_vec[is.infinite(log_vec)] = 0
+  log_vec[is.nan(log_vec)] = 0
+  return(-sum(x * log_vec))
+}
+
+if(parameter_list$run_additional_gene_removal){
+  gene_expr_dataset = harmonized_seurat_object@assays[["RNA"]]@data
+  max_cells = 30000
+  if(ncol(gene_expr_dataset) > max_cells){
+    set.seed(1234)
+    idx = sample(1:ncol(gene_expr_dataset),max_cells)
+    gene_expr_dataset = gene_expr_dataset[,idx]
+    dataset_factor = harmonized_seurat_object@meta.data$Dataset[idx]
+  }else{
+    dataset_factor = harmonized_seurat_object@meta.data$Dataset
+  }
+  gene_expr_dataset[gene_expr_dataset != 0] = 1
+  gene_expr_dataset =as.matrix(gene_expr_dataset)
+
+  # get per data set expression
+  per_dataset_occ = data.frame(t(rowsum(t(gene_expr_dataset),dataset_factor)))
+  per_dataset_occ2 = data.frame(t(apply(per_dataset_occ,1,function(x){return(round((x/sum(x)),5))})))
+  per_dataset_occ2 = apply(per_dataset_occ2,2,function(x){x[is.nan(x)] = 0; return(x)})
+
+  # filter genes that are not occruing in at least 5 datasets
+  thresh = 0.000001
+  per_dataset_occ_binary = as.matrix(per_dataset_occ2)
+  per_dataset_occ_binary[per_dataset_occ_binary>thresh] = 1
+  per_dataset_occ_binary[per_dataset_occ_binary<1] = 0
+
+  # calculate mad
+  per_dataset_occ_entropy = apply(per_dataset_occ2,1,entropy_fun)
+  per_dataset_occ_min = data.frame(occ=rowSums(per_dataset_occ_binary),entropy = per_dataset_occ_entropy,gene = rownames(per_dataset_occ_binary))
+
+  # exclude genes
+  balance_exclude_genes = per_dataset_occ_min$gene[per_dataset_occ_min$occ<=4 | per_dataset_occ_min$entropy <= 1.25 ]
+  message("Excluding additional: ",length(balance_exclude_genes)," genes")
+
+  markers_comparisons_all = markers_comparisons_all[!markers_comparisons_all$gene %in% balance_exclude_genes,]
+  markers_comparisons_siblings = markers_comparisons_siblings[!markers_comparisons_siblings$gene %in% balance_exclude_genes,]
+
+}
+
+
+##########
 ### prepare raw edgelists
 ##########
 
@@ -237,7 +287,7 @@ labelmat_updated_new_labels = apply(labelmat_updated,2,function(x,new_labels){
 colnames(labelmat_updated_new_labels) = stringr::str_extract(labelmat_updated_new_labels[1,],pattern = paste0(parameter_list$new_prefix,"[0-9]+"))
 
 ##########
-### Creat pruned result version
+### Create pruned result version
 ##########
 
 # save in data.tree format

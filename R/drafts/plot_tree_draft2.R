@@ -20,7 +20,9 @@ message("loaded edglist with ",nrow(edgelist)," rows.")
 labelmat = mrtree_result$labelmat
 message("loaded labelmat with ",nrow(labelmat)," rows.")
 
-a1 = mrtree_output_raw$labelmat.flat
+#a1 = mrtree_output_raw$labelmat.flat
+
+apply(labelmat,2,function(x){length(unique(x))})
 
 ############
 
@@ -102,7 +104,7 @@ tree_data = suppressWarnings(tidytree::as.treedata(tree_data_tibble))
 #   geom_tiplab(ggplot2::aes(x=branch, label=first_cluster_name), size=label_size,vjust= -.5,color="darkred")
 # circular_tree
 
-label = "C196-194"#"K42-7"#"K160-112"
+label = "C190-140"#"K42-7"#"K160-112"
 id_offset = 1
 label_size =3
 # add selection
@@ -128,12 +130,17 @@ library(Seurat)
 
 # load seurat
 #curated_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated",".rds"))
+curated_seurat_object@meta.data = curated_seurat_object@meta.data[,!grepl("C[0-9]+",colnames(curated_seurat_object@meta.data))]
 curated_seurat_object@meta.data = cbind(curated_seurat_object@meta.data,labelmat)
 
-p1 = DimPlot(curated_seurat_object,group.by = "C316",raster = F,label=TRUE)+NoLegend()
+apply(labelmat,2,function(x){length(unique(x))})
+
+p1 = DimPlot(curated_seurat_object,group.by = "C23",raster = F,label=TRUE)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
-cluster_column = "C549"
+cluster_column = "C487"
+set.seed(1234)
+curated_seurat_object@meta.data[,cluster_column] = factor(curated_seurat_object@meta.data[,cluster_column], levels = sample(unique(curated_seurat_object@meta.data[,cluster_column]),length(unique(curated_seurat_object@meta.data[,cluster_column]))))
 p1 = DimPlot(curated_seurat_object,group.by = cluster_column,raster = F,label=TRUE,label.size = 2)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
