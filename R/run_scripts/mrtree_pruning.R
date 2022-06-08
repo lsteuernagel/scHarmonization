@@ -106,6 +106,8 @@ if(parameter_list$run_additional_gene_removal){
   markers_comparisons_all = markers_comparisons_all[!markers_comparisons_all$gene %in% balance_exclude_genes,]
   markers_comparisons_siblings = markers_comparisons_siblings[!markers_comparisons_siblings$gene %in% balance_exclude_genes,]
 
+  scUtils::writeList_to_JSON(list(exlude_genes_pruning = balance_exclude_genes),filename = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$marker_suffix,"_additionally_removed_markers.json"))
+
 }
 
 

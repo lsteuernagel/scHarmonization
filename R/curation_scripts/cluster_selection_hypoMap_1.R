@@ -130,7 +130,7 @@ p1 = DimPlot(curated_seurat_object,group.by = "leiden_clusters_0.05",raster = F,
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 
-p1=FeaturePlot(curated_seurat_object,features = "Slco2a1",raster = F,order=TRUE)
+p1=FeaturePlot(curated_seurat_object,features = "Lhx9",raster = F,order=TRUE)
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 ##########

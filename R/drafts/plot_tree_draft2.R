@@ -104,7 +104,7 @@ tree_data = suppressWarnings(tidytree::as.treedata(tree_data_tibble))
 #   geom_tiplab(ggplot2::aes(x=branch, label=first_cluster_name), size=label_size,vjust= -.5,color="darkred")
 # circular_tree
 
-label = "C190-140"#"K42-7"#"K160-112"
+label = "C180-140"#"K42-7"#"K160-112"
 id_offset = 1
 label_size =3
 # add selection
@@ -135,10 +135,10 @@ curated_seurat_object@meta.data = cbind(curated_seurat_object@meta.data,labelmat
 
 apply(labelmat,2,function(x){length(unique(x))})
 
-p1 = DimPlot(curated_seurat_object,group.by = "C23",raster = F,label=TRUE)+NoLegend()
+p1 = DimPlot(curated_seurat_object,group.by = "C280",raster = F,label=TRUE)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
-cluster_column = "C487"
+cluster_column = "C446"
 set.seed(1234)
 curated_seurat_object@meta.data[,cluster_column] = factor(curated_seurat_object@meta.data[,cluster_column], levels = sample(unique(curated_seurat_object@meta.data[,cluster_column]),length(unique(curated_seurat_object@meta.data[,cluster_column]))))
 p1 = DimPlot(curated_seurat_object,group.by = cluster_column,raster = F,label=TRUE,label.size = 2)+NoLegend()

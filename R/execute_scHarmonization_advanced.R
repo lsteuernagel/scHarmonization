@@ -232,28 +232,28 @@ slurm_id_6b = stringr::str_remove(output_message,pattern = "Submitted batch job 
 
 
 ##########
-### [13] scMRMR
+### [8] scMRMR
 ##########
 
 # TODO: still need to decide whether to include this part
 # probably not for now !
 
 ##########
-### [14] propagate author cell types
+### [9] propagate author cell types
 ##########
 
 # TODO
 # maybe use approach from mapscvi to make a column per annotated dataset
 
 ##########
-### [15] regionPrediction with scCoco
+### [10] regionPrediction with scCoco
 ##########
 
 #TODO: add region_prediction_new and scCoco !
 
 
 ##########
-### [16] final curation
+### [11] final curation
 ##########
 
 # TODO: need to gather everything

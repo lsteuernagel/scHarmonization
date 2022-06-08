@@ -9,9 +9,10 @@ message(" Load parameters and packages ")
 require(tidyverse)
 require(Seurat)
 require(Matrix)
+require(scCoco)
 
 source("R/harmonization_functions.R")
-source("R/stratified_wilcoxon_functions.R")
+#source("R/stratified_wilcoxon_functions.R")
 
 # get params-filename from commandline
 command_args<-commandArgs(TRUE)
@@ -22,90 +23,261 @@ parameter_list = jsonlite::read_json(param_file)
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 #test:
-parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_4.json")
+parameter_list = jsonlite::read_json("data/parameters_annotation_v2_1.json")
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
-parameter_list$marker_suffix = "pruned"
-parameter_list$new_name_suffix=paste0(parameter_list$new_name_suffix,"_curated")
+parameter_list$cluster_column ="C196"
 
 # read features to excludes
 features_exclude_list= unlist(jsonlite::read_json(parameter_list$genes_to_exclude_file))
 #features_exclude_list = lapply(features_exclude_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # load seurat
-harmonized_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
+curated_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
+
+# load mrtree clustering
+mrtree_result = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_mrtree_clustering_results",".rds"))
+mrtree_result = readRDS("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization/backup_marker_tree/hypoMap_harmonized_curated_pruned_mrtree_clustering_results.rds")
 
 
 ##########
 ### Load marker genes
 ##########
 
-
-
+# read all available marker tables if marker detection was run on multiple subsets !!
+markers_comparisons_all_list=list()
+for(current_start_node in parameter_list$start_nodes_annotation_markers){
+  # load markers all
+  filename=paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",current_start_node,"_markers_all_",parameter_list$marker_suffix,".tsv")
+  if(file.exists(filename)){
+    markers_comparisons_all_list[[current_start_node]] = data.table::fread(filename,data.table = F)
+  }else{
+    message("Cannot find markers stored in : ",filename)
+  }
+}
+markers_comparisons_all = as.data.frame(do.call(rbind,markers_comparisons_all_list))
+message("All markers for: ",length(unique(markers_comparisons_all$cluster_id))," clusters available")
 
 ##########
 ### Clean up marker genes
 ##########
 
+# load additional remove
+additional_remove_genes = jsonlite::read_json(unlist(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$marker_suffix,"_additionally_removed_markers.json")))
+
+# which clusters are in cluster_column
+#cluster_column_ids = as.character(unique(curated_seurat_object@meta.data[,parameter_list$cluster_column]))
+cluster_column_ids = as.character(unique(mrtree_result$labelmat[,parameter_list$cluster_column]))
+
+# subset to nodes below: param_list$start_node_tree
+all_children_of_start_node = scUtils::find_children(parameter_list$start_node_tree,mrtree_result$edgelist)
+
+
 # all_markers_filtered
+all_markers_filtered = markers_comparisons_all %>% dplyr::filter(! gene %in% additional_remove_genes &
+                                                                      specificity > parameter_list$min_specificity &
+                                                                      p_val_adj < parameter_list$max_pval_adj &
+                                                                      cluster_id %in% cluster_column_ids &
+                                                                      cluster_id %in% all_children_of_start_node
+                                                                      )
 
 
 # make list per cluster
-markers_per_cluster = split(all_markers_filtered$gene,f = all_markers_filtered$cluster_1)
-markers_weight_per_cluster = split(all_markers_filtered$specificity,f = all_markers_filtered$cluster_1)
+markers_per_cluster = split(all_markers_filtered$gene,f = all_markers_filtered$cluster_id)
+markers_weight_per_cluster = split(all_markers_filtered$specificity,f = all_markers_filtered$cluster_id)
 markers_weight_per_cluster = sapply(markers_weight_per_cluster,function(x,maxv=100){x[x>maxv] = maxv; x = x/sum(x)*length(x); return(x)})
+
 
 ##########
 ### Load aba ish data
 ##########
 
-aba_gene_to_id = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/allen_brain/ish_data_voxel/aba_gene_to_id.tsv",data.table = FALSE)
-aba_ish_matrix = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/allen_brain/ish_data_voxel/aba_ish_matrix_energy.tsv",data.table = FALSE,header = TRUE)
-aba_ccf_grid_annotation = readRDS("/beegfs/scratch/bruening_scratch/lsteuernagel/data/allen_brain/ish_data_voxel/aba_ccf_grid_annotation.rds")
-mba_ontology_flatten= data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/allen_brain/ish_data_voxel/mba_ontology_flatten.tsv",data.table = FALSE)
+# load with filenames to parameter json
+aba_gene_to_id = data.table::fread(parameter_list$aba_gene_to_id_file,data.table = FALSE)
+aba_ish_matrix = data.table::fread(parameter_list$aba_ish_matrix_file,data.table = FALSE,header = TRUE)
+aba_ccf_grid_annotation = readRDS(parameter_list$aba_ccf_grid_annotation_file)
+mba_ontology_flatten= data.table::fread(parameter_list$mba_ontology_flatten_file,data.table = FALSE)
 
 ##########
 ### Run region enrichment with scCoco
 ##########
 
-library(scCoco)
-
 # run scCoco regions per geneset
 hypoMap_region_annotation_full = findRegions_genesets(gene_set = markers_per_cluster,
-                                                      min_ids = 5,
-                                                      topn=5,
-                                                      target_structure_id = "1097",
-                                                      max_ids_to_include = Inf,
-                                                      # gene_set_weights = markers_weight_per_cluster,
+                                                      min_ids = parameter_list$min_ids,
+                                                      topn= parameter_list$topn_results,
+                                                      target_structure_id = parameter_list$target_structure_id,
+                                                      max_ids_to_include = parameter_list$max_ids_to_include,
+                                                    #  gene_set_weights = markers_weight_per_cluster,
                                                       aba_gene_to_id = aba_gene_to_id,
                                                       aba_ish_matrix = aba_ish_matrix,
                                                       aba_ccf_grid_annotation = aba_ccf_grid_annotation ,
-                                                      mba_ontology_flatten= mba_ontology_flatten
+                                                      mba_ontology_flatten= mba_ontology_flatten,
+                                                      target_level = as.character(parameter_list$target_level)
 )
+#a11 = hypoMap_region_annotation_full$scores_per_leaf_region_all
+#a22 = hypoMap_region_annotation_full$scores_per_target_level_region_all
+
 
 # run scCoco summarised regions  per geneset
-hypoMap_region_annotation_df = summariseRegions_genesets(findRegion_result = hypoMap_region_annotation_full,min_score=0.75)
+hypoMap_region_annotation_df = summariseRegions_genesets(findRegion_result = hypoMap_region_annotation_full,min_score=parameter_list$min_score_region_summary)
 #table(hypoMap_region_annotation_df$Region)
 
 ##########
 ### Load manual per dataset curation
 ##########
 
+require(dplyr)
+# load suggested_region_per_dataset
+suggested_region_per_dataset = jsonlite::read_json(param_list$suggested_region_file)
+suggested_region_per_dataset = lapply(suggested_region_per_dataset,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
+
+# get params
+cluster_column = parameter_list$cluster_column
+min_dataset_cell_value = parameter_list$min_dataset_cell_value
+dataset_column = parameter_list$dataset_column
+
+# update column name with dataset column
+colnames(curated_seurat_object@meta.data)[colnames(curated_seurat_object@meta.data)==dataset_column] = "Dataset"
+
+# make a summary of each dataset contribution to each cluster:
+total_dataset_counts = curated_seurat_object@meta.data %>% # [map_seurat_object@meta.data[,cluster_column] %in% current_node,]
+  dplyr::group_by(Dataset) %>%
+  dplyr::summarise(total_dataset_occ = dplyr::n())
+total_dataset_counts$total_dataset_occ[total_dataset_counts$total_dataset_occ < min_dataset_cell_value] = min_dataset_cell_value
+total_cluster_counts = curated_seurat_object@meta.data %>% # [map_seurat_object@meta.data[,cluster_column] %in% current_node,]
+  dplyr::group_by(!!sym(cluster_column)) %>%
+  dplyr::summarise(total_cluster_occ = n())
+dataset_info = curated_seurat_object@meta.data %>% # [map_seurat_object@meta.data[,cluster_column] %in% current_node,]
+  dplyr::group_by(Dataset,!!sym(cluster_column)) %>%
+  dplyr::summarise(Dataset_occ = n()) %>% ungroup()  %>%
+  dplyr::left_join(total_dataset_counts,by=c("Dataset"="Dataset")) %>%
+  dplyr::left_join(total_cluster_counts,by=cluster_column) %>% ungroup() %>%
+  dplyr::mutate(adjusted_counts = (Dataset_occ / total_dataset_occ) * total_cluster_occ) %>%
+  dplyr::group_by(!!sym(cluster_column)) %>%
+  dplyr::mutate(dataset_pct = Dataset_occ / sum(Dataset_occ), adjusted_dataset_pct = adjusted_counts / sum(adjusted_counts)) %>% dplyr::arrange(desc(adjusted_dataset_pct))#
+
+# matrix which regions can be counted from which dataset
+suggested_region_per_dataset_matrix = t(scCoco::intersect_from_list(suggested_region_per_dataset))
+
+# matrix with datasets weights epr cluster
+dataset_info_wide = dataset_info %>% dplyr::select(Dataset,cluster = !!sym(cluster_column),dataset_pct) %>%
+  tidyr::spread(key = Dataset,value = dataset_pct) %>% as.data.frame()
+rownames(dataset_info_wide) = dataset_info_wide$cluster
+dataset_info_wide = as.matrix(dataset_info_wide[,2:ncol(dataset_info_wide)])
+# order according to other one
+dataset_info_wide = dataset_info_wide[,match(rownames(suggested_region_per_dataset_matrix),colnames(dataset_info_wide))]
+dataset_info_wide[is.na(dataset_info_wide)] = 0
+
+# multiply the two
+## this matrix gives weights for different regions for each cluster based on the (asjusted) contribution of each dataset to the cluster
+# the regions each dataset could originate from are manually curated above
+regionweight_per_cluster = (dataset_info_wide) %*% suggested_region_per_dataset_matrix
+
+#TODO: maybe set max to 0.8 --> then 80% contribution is sufiecient for a weight of 1 in the multiplication with ABA later
+
+##########
+### Combine Allen brain atlas prediction with manual curation per dataset
+##########
+
+# TODO params
+region_weight_coef = (1/3) # v1
+min_weight_region = 0.5 # v2
+
+## matrix from enrichemt scores:
+scores_per_target_level_region_all=hypoMap_region_annotation_full$scores_per_target_level_region_all
+scores_per_target_level_region_matrix = scores_per_target_level_region_all[,3:ncol(scores_per_target_level_region_all)]
+rownames(scores_per_target_level_region_matrix) = scores_per_target_level_region_all$topname
+
+# match the two
+shared_regions = intersect(rownames(scores_per_target_level_region_matrix),colnames(regionweight_per_cluster))
+scores_per_target_level_region_matrix = scores_per_target_level_region_matrix[rownames(scores_per_target_level_region_matrix) %in% shared_regions,]
+regionweight_per_cluster = regionweight_per_cluster[,colnames(regionweight_per_cluster) %in% shared_regions]
+scores_per_target_level_region_matrix = scores_per_target_level_region_matrix[match(colnames(regionweight_per_cluster),rownames(scores_per_target_level_region_matrix)),]
+# also remove any non-shared clusters
+shared_clusters = intersect(colnames(scores_per_target_level_region_matrix),rownames(regionweight_per_cluster))
+scores_per_target_level_region_matrix = scores_per_target_level_region_matrix[,colnames(scores_per_target_level_region_matrix) %in% shared_clusters]
+regionweight_per_cluster = regionweight_per_cluster[rownames(regionweight_per_cluster) %in% shared_clusters,]
+scores_per_target_level_region_matrix = scores_per_target_level_region_matrix[,match(rownames(regionweight_per_cluster),colnames(scores_per_target_level_region_matrix))]
+
+# multiply with weights from dataset origin
+# version1:
+regionweight_per_cluster_transposed = as.data.frame(t(regionweight_per_cluster))
+dataset_weight_enrichment_per_cluster =as.data.frame((scores_per_target_level_region_matrix*regionweight_per_cluster_transposed + scores_per_target_level_region_matrix *  ((1/region_weight_coef)-1) ) / (1/region_weight_coef))
+# version 2:
+regionweight_per_cluster_transposed = t(regionweight_per_cluster)
+regionweight_per_cluster_transposed[regionweight_per_cluster_transposed > min_weight_region] = 1
+regionweight_per_cluster_transposed[regionweight_per_cluster_transposed != 1 ] = regionweight_per_cluster_transposed[regionweight_per_cluster_transposed != 1 ] + 0.5
+#regionweight_per_cluster_transposed[regionweight_per_cluster_transposed>1] = 1
+dataset_weight_enrichment_per_cluster =as.data.frame(scores_per_target_level_region_matrix*regionweight_per_cluster_transposed )
+
+# copied from function:
+# find top region and other regions
+min_score = 0.5
+all_clusters = colnames(dataset_weight_enrichment_per_cluster)
+result_region_list = list()
+for(cluster in all_clusters){
+  result_vec = vector()
+  result_vec["cluster"] = cluster
+  if(cluster %in% colnames(dataset_weight_enrichment_per_cluster)){
+    # if(max(dataset_weight_enrichment_per_cluster[,cluster])[1]>min_score){
+    # - Region (Target level)
+    result_vec["Region"] = rownames(dataset_weight_enrichment_per_cluster)[which(dataset_weight_enrichment_per_cluster[,cluster] == max(dataset_weight_enrichment_per_cluster[,cluster]))[1]]
+    # - Most likely region (all levels)
+    result_vec["Region_score"] = max(dataset_weight_enrichment_per_cluster[,cluster])[1]
+    # - Other likely regions (all levels, cutoff ?)
+    top_5_scores = sort(dataset_weight_enrichment_per_cluster[,cluster],decreasing = TRUE)[1:5]
+    top_5_scores = top_5_scores[top_5_scores>min_score]
+    top_5_scores = dataset_weight_enrichment_per_cluster[dataset_weight_enrichment_per_cluster[,cluster] %in% top_5_scores,c(1,2,which(colnames(dataset_weight_enrichment_per_cluster)==cluster))]
+    top_5_scores = top_5_scores[order(top_5_scores[,cluster],decreasing=TRUE),]
+    result_vec["Region_other"] = possible_regions = paste0(rownames(top_5_scores)[-1],collapse = " | ")
+    # }else{
+    #   result_vec =c(result_vec,rep(NA,4))
+    #   names(result_vec)[2:5] = c("Region","Region_specific","Region_specific_enrichment","Region_specific_other")
+    # }
+  }else{
+    result_vec =c(result_vec,rep(NA,3))
+    names(result_vec)[2:4] = c("Region","Region_score","Region_other")
+  }
+  # result
+  result_region_list[[cluster]] = result_vec
+}
+
+# combine to result
+result_region = as.data.frame(do.call(rbind,result_region_list))
+
+##########
+### Add QC and power metrics of prediction
+##########
+
+## add qc
+tmp_qc = hypoMap_region_annotation_full$gene_set_power
+tmp_qc$cluster = rownames(tmp_qc)
+result_region = dplyr::left_join(result_region,tmp_qc,by="cluster")
+
+# mark low quality as NA
+# if pct_of_genes == 0| number_ids < 5
+# if Region_score < 0.75
+# if Region_score < 0.8 & (pct_of_genes < 0.5 | number_ids < 5)
+result_region$Region_curated = result_region$Region
+result_region$Region_curated[result_region$Region_score < 0.73] = NA
+result_region$Region_curated[result_region$pct_of_genes < 0.4 | result_region$number_ids < 5] = NA
+result_region$Region_curated[result_region$Region_score < 0.8 & (result_region$pct_of_genes < 0.5 | result_region$number_ids < 5)] = NA
+result_region$Region_curated[result_region$Region_score < 0.8 & (result_region$pct_of_weights < 0.5)] = NA
+result_region$Region_curated[result_region$pct_of_weights < 0.333] = NA
+result_region$Region_other[is.na(result_region$Region_curated)] = paste0(result_region$Region[is.na(result_region$Region_curated)]," | ",result_region$Region_other[is.na(result_region$Region_curated)])
+
+##########
+### Summarize regions and add color scheme
+##########
+
+# add region for coloring:
+hypothalamus_regions_mapping = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/projects/scHarmonize_scripts/new_region_prediction/new_region_prediction_mapping.tsv",data.table = FALSE)
+result_region = dplyr::left_join(result_region,hypothalamus_regions_mapping %>% dplyr::select(name,Region_curated_Color=name_summarized),by=c("Region_curated"="name"))
 
 
-hypoMap_region_annotation_df$Region_curated = hypoMap_region_annotation_df$Region
-hypoMap_region_annotation_df$Region_curated[hypoMap_region_annotation_df$Region_curated %in% c("Lateral mammillary nucleus","Medial mammillary nucleus")] = "Mammillary nucleus"
-hypoMap_region_annotation_df$Region_curated[hypoMap_region_annotation_df$Region_curated %in% c("Median eminence")] = "Arcuate hypothalamic nucleus"
-hypoMap_region_annotation_df$Region_curated[hypoMap_region_annotation_df$Region_curated %in% c("Periventricular hypothalamic nucleus, intermediate part","Anteroventral periventricular nucleus","Periventricular hypothalamic nucleus, preoptic part","Periventricular hypothalamic nucleus, posterior part")] = "Periventricular hypothalamic nucleus"
-hypoMap_region_annotation_df$Region_curated[hypoMap_region_annotation_df$Region_confidence == 0] = NA
-
-
-
-
-
-
-
-
-
+##########
+### Save results
+##########
 
 
 
