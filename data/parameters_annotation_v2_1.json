@@ -13,7 +13,7 @@
   "assay_name": "RNA",
   "integration_name": "scvi",
   "start_nodes_annotation_markers": ["C2-1", "C2-2"],
-  "min_specificity": 3,
+  "min_specificity": 4,
   "min_specificity_sibling_children": 2.5,
   "limit_factor": 5,
   "max_score_siblings_children": 20,
@@ -59,6 +59,9 @@
     "C62-55": "Dividing.OPC",
     "C62-60": "Fibroblasts",
     "C62-59": "Mural",
+    "C62-12": "vGLUT-2.2",
+    "C62-14": "vGLUT-3.3",
+    "C62-31": "GABA-2.2",
     "C180-53": "Unassigned",
     "C180-3": "Neural stem cells"
   },
@@ -69,13 +72,17 @@
   "cluster_column": "C180",
   "start_node_tree": "C2-1",
   "max_pval_adj": 0.001,
+  "max_pct_2": 0.3,
   "min_ids": 3,
   "topn_results": 4,
   "target_structure_id": "1097",
   "max_ids_to_include": 10000,
-  "min_score_region_summary": 0.75,
   "target_level": "8",
   "suggested_region_file": "data/hypoMap_suggested_region_per_dataset.json",
   "min_dataset_cell_value": 2000,
-  "dataset_column": "Dataset"
+  "dataset_column": "Dataset",
+  "max_region_weight_value": 0.75,
+  "min_score_region_summary": 0.75,
+  "min_pct_of_genes": 0.3333,
+  "min_number_of_ids": 3
 }

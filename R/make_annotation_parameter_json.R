@@ -74,6 +74,9 @@ param_list$manual_names_annotation = as.list(c("C2-1" = "Neurons",
                                            "C62-55" = "Dividing.OPC",
                                            "C62-60"= "Fibroblasts",
                                            "C62-59"= "Mural",
+                                           "C62-12"= "vGLUT-2.2",
+                                           "C62-14"= "vGLUT-3.3",
+                                           "C62-31"= "GABA-2.2",
                                            "C180-53"= "Unassigned",
                                            "C180-3"= "Neural stem cells"))
 
@@ -90,18 +93,22 @@ param_list$start_node_tree = "C2-1"
 param_list$min_specificity = 4
 param_list$max_pval_adj = 0.001
 param_list$max_pct_2 = 0.3
+# for prediction with ABA iSH
 param_list$min_ids = 3 # how many valid ids are required to calculate results !?
 param_list$topn_results = 4 # report topn results back
 param_list$target_structure_id = "1097" # hypothalamaus
 param_list$max_ids_to_include = 10000 # how many genes in ABA enrichment (10k or Inf for all)
-param_list$min_score_region_summary = 0.75
 param_list$target_level = "8"
-param_list$max_region_weight_value = 0.75 # all region weights (percentages) above this are set to 1
-
-# region prediction with manual suggeseted regions per data:
+# region prediction with manual suggested regions per data:
 param_list$suggested_region_file = "data/hypoMap_suggested_region_per_dataset.json"
 param_list$min_dataset_cell_value = 2000
 param_list$dataset_column = "Dataset"
+param_list$max_region_weight_value = 0.75 # all region weights (percentages) above this are set to 1
+# for final filtering (prediction not meeting the criteria are set to NA):
+param_list$min_score_region_summary = 0.75
+param_list$min_pct_of_genes = 0.3333
+param_list$min_number_of_ids = 3
+
 
 # save
 scUtils::writeList_to_JSON(param_list,filename = "data/parameters_annotation_v2_1.json")

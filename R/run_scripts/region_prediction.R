@@ -2,7 +2,7 @@
 ### Load parameters and packages
 ##########
 
-message(Sys.time(),": Starting mrtree pruning .." )
+message(Sys.time(),": Starting region prediction .." )
 
 message(" Load parameters and packages ")
 
@@ -23,9 +23,9 @@ parameter_list = jsonlite::read_json(param_file)
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 #test:
-parameter_list = jsonlite::read_json("data/parameters_annotation_v2_1.json")
-parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
-parameter_list$cluster_column ="C280"
+# parameter_list = jsonlite::read_json("data/parameters_annotation_v2_1.json")
+# parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
+# parameter_list$cluster_column ="C280"
 
 # read features to excludes
 features_exclude_list= unlist(jsonlite::read_json(parameter_list$genes_to_exclude_file))
@@ -101,6 +101,8 @@ mba_ontology_flatten= data.table::fread(parameter_list$mba_ontology_flatten_file
 ### Run region enrichment with scCoco
 ##########
 
+message(Sys.time(),": Run prediction with ABA ISH .." )
+
 # run scCoco regions per geneset
 hypoMap_region_annotation_full = findRegions_genesets(gene_set = markers_per_cluster,
                                                       min_ids = parameter_list$min_ids,
@@ -122,6 +124,8 @@ hypoMap_region_annotation_df = summariseRegions_genesets(findRegion_result = hyp
 ##########
 ### Load manual per dataset curation
 ##########
+
+message(Sys.time(),": Combine with per dataset region curation .." )
 
 require(dplyr)
 # load suggested_region_per_dataset
@@ -183,10 +187,6 @@ regionweight_per_cluster[regionweight_per_cluster > 1] = 1
 ### Combine Allen brain atlas prediction with manual curation per dataset
 ##########
 
-# TODO params
-region_weight_coef = (1/3) # v1
-min_weight_region = 0.5 # v2
-
 ## matrix from enrichemt scores:
 scores_per_target_level_region_all=hypoMap_region_annotation_full$scores_per_target_level_region_all
 scores_per_target_level_region_matrix = scores_per_target_level_region_all[,3:ncol(scores_per_target_level_region_all)]
@@ -204,23 +204,8 @@ regionweight_per_cluster = regionweight_per_cluster[rownames(regionweight_per_cl
 scores_per_target_level_region_matrix = scores_per_target_level_region_matrix[,match(rownames(regionweight_per_cluster),colnames(scores_per_target_level_region_matrix))]
 
 # multiply with weights from dataset origin
-# version1:
 regionweight_per_cluster_transposed = as.data.frame(t(regionweight_per_cluster))
-#dataset_weight_enrichment_per_cluster =as.data.frame((scores_per_target_level_region_matrix*regionweight_per_cluster_transposed + scores_per_target_level_region_matrix *  ((1/region_weight_coef)-1) ) / (1/region_weight_coef))
-# updated version1 :
-#dataset_weight_enrichment_per_cluster=as.data.frame(regionweight_per_cluster_transposed*region_weight_coef + scores_per_target_level_region_matrix*(1-region_weight_coef))
-
-# version 3
-#dataset_weight_enrichment_per_cluster=as.data.frame(regionweight_per_cluster_transposed*region_weight_coef + scores_per_target_level_region_matrix*(1-region_weight_coef))
-
-# version 2:
-# regionweight_per_cluster_transposed = t(regionweight_per_cluster)
-# regionweight_per_cluster_transposed[regionweight_per_cluster_transposed > min_weight_region] = 1
-# regionweight_per_cluster_transposed[regionweight_per_cluster_transposed != 1 ] = regionweight_per_cluster_transposed[regionweight_per_cluster_transposed != 1 ] + 0.5
-# #regionweight_per_cluster_transposed[regionweight_per_cluster_transposed>1] = 1
-# dataset_weight_enrichment_per_cluster =as.data.frame(scores_per_target_level_region_matrix*regionweight_per_cluster_transposed )
-
-# version 4:
+# version 4: just multiply --> after adjusting regionweight_per_cluster_transposed (via regionweight_per_cluster) with parameter_list$max_region_weight_value
 dataset_weight_enrichment_per_cluster =as.data.frame(scores_per_target_level_region_matrix*regionweight_per_cluster_transposed )
 
 # copied from function:
@@ -267,30 +252,29 @@ tmp_qc = hypoMap_region_annotation_full$gene_set_power
 tmp_qc$cluster = rownames(tmp_qc)
 result_region = dplyr::left_join(result_region,tmp_qc,by="cluster")
 
-# mark low quality as NA
-# if pct_of_genes == 0| number_ids < 5
-# if Region_score < 0.75
-# if Region_score < 0.8 & (pct_of_genes < 0.5 | number_ids < 5)
-
-# old and solid:
-# result_region$Region_curated = result_region$Region
-# result_region$Region_curated[result_region$Region_score < 0.73] = NA
-# result_region$Region_curated[result_region$pct_of_genes < 0.4 | result_region$number_ids < 5] = NA
-# result_region$Region_curated[result_region$Region_score < 0.8 & (result_region$pct_of_genes < 0.5 | result_region$number_ids < 5)] = NA
-# result_region$Region_curated[result_region$Region_score < 0.8 & (result_region$pct_of_weights < 0.5)] = NA
-# result_region$Region_curated[result_region$pct_of_weights < 0.333] = NA
-# result_region$Region_other[is.na(result_region$Region_curated)] = paste0(result_region$Region[is.na(result_region$Region_curated)]," | ",result_region$Region_other[is.na(result_region$Region_curated)])
-
-# new:
+# filter out cluster prediction with low confidence:
 result_region$Region_curated = result_region$Region
-result_region$Region_curated[result_region$Region_score < 0.75] = NA
-result_region$Region_curated[result_region$pct_of_genes < 0.333 | result_region$number_ids < 3] = NA
+result_region$Region_curated[result_region$Region_score < parameter_list$min_score_region_summary] = NA
+result_region$Region_curated[result_region$pct_of_genes < parameter_list$min_pct_of_genes | result_region$number_ids < parameter_list$min_number_of_ids] = NA
 result_region$Region_other[is.na(result_region$Region_curated)] = paste0(result_region$Region[is.na(result_region$Region_curated)]," | ",result_region$Region_other[is.na(result_region$Region_curated)])
-
 
 ##########
 ### Save results
 ##########
+
+message(Sys.time(),": Save region prediction .." )
+
+# main results
+data.table::fwrite(result_region,file = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_region_prediction.txt") ,sep="\t")
+
+# all other information as rds
+full_res_list = list(full_region_prediction_result = hypoMap_region_annotation_full,
+                     dataset_pct_adjusted_per_region = dataset_info_wide,
+                     regionweight_per_cluster = regionweight_per_cluster)
+saveRDS(full_res_list,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_region_prediction_all_results.rds"))
+
+message(Sys.time(),": Finalized .." )
+
 
 
 

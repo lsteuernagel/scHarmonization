@@ -255,7 +255,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
       name_gene = potential_descriptive_markers_sel$gene[1]
       # if node has no siblings: don't need annotation!
       if(length(sibling_nodes)==0){
-        name_gene="d"
+        name_gene="m"
       }
     }else{
       # if merge take name from sibling!
@@ -290,9 +290,9 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
   annotation_df = annotation_df %>% dplyr::rename(Map_CellType=V1) %>% dplyr::mutate(cluster_id = rownames(annotation_df))
   if(reverse_order){
     annotation_df$Map_CellType = sapply(annotation_df$Map_CellType,function(x){paste0(rev(strsplit(x,split = "\\.")[[1]]),collapse = ".")})
-    annotation_df$clean_names = sub("\\.$","",gsub("d\\.","",annotation_df$Map_CellType))#sub(".","",gsub("\\.d","",annotation_df$Map_CellType))
+    annotation_df$clean_names = sub("\\.$","",gsub("m\\.","",annotation_df$Map_CellType))#sub(".","",gsub("\\.d","",annotation_df$Map_CellType))
   }else{
-    annotation_df$clean_names = sub("\\.","",gsub("\\.d","",annotation_df$Map_CellType))
+    annotation_df$clean_names = sub("\\.","",gsub("\\.m","",annotation_df$Map_CellType))
   }
   annotation_df = dplyr::left_join(annotation_df,cluster_levels,by=c("cluster_id"="cluster"))
   annotation_df$clean_names[is.na(annotation_df$clean_names)]="all"

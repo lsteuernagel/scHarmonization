@@ -289,7 +289,7 @@ outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
 errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
 dependency_ids = c(slurm_id_6,slurm_id_6b) ## Might need to adjust this !
 output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
-slurm_id_7 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+slurm_id_10 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
 ##########
 ### [11] final curation
