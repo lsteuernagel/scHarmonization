@@ -44,7 +44,7 @@ lateral_hypo = c("Lateral hypothalamic area","Zona incerta","Tuberal nucleus","S
 scn_hypo = c("Subparaventricular zone","Suprachiasmatic nucleus","Anterior hypothalamic nucleus","Suprachiasmatic preoptic nucleus","Retrochiasmatic area","Paraventricular hypothalamic nucleus","Periventricular hypothalamic nucleus, preoptic part","Medial preoptic area","Medial preoptic nucleus","Periventricular hypothalamic nucleus, anterior part")
 
 suggested_region_per_dataset = list(Affinati10x = mediobasal_hypo,
-                                    Anderson10x = mediobasal_hypo,
+                                    Anderson10x = c(mediobasal_hypo,"Lateral hypothalamic area"),
                                     CampbellDropseq = c(mediobasal_hypo,"Suprachiasmatic nucleus"),
                                     ChenDropseq = relevant_structures,
                                     Dowsett10xnuc = relevant_structures,
@@ -60,12 +60,12 @@ suggested_region_per_dataset = list(Affinati10x = mediobasal_hypo,
                                     Mousebrainorg10x = relevant_structures,
                                     RomanovDev10x = relevant_structures,
                                     RossiDropseq = lateral_hypo,
-                                    Rupp10x = mediobasal_hypo,
+                                    Rupp10x = c(mediobasal_hypo,"Lateral hypothalamic area"),
                                     Wen10x = scn_hypo,
                                     wenDropseq = scn_hypo)
 
 ## save to file
-scUtils::writeList_to_JSON(param_list,filename = "data/hypoMap_suggested_region_per_dataset.json")
+scUtils::writeList_to_JSON(suggested_region_per_dataset,filename = "data/hypoMap_suggested_region_per_dataset.json")
 
 
 

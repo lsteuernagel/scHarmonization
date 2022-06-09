@@ -224,12 +224,37 @@ dependency_ids = c(slurm_id_5)
 output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
 slurm_id_6b = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
+
+##########
+### Read parameters fro annotation
+##########
+
+# load json file with all other information
+params_annotation= jsonlite::read_json("data/parameters_annotation_v2_1.json")
+# if some fields are lists --> unlist
+params_annotation = lapply(params_annotation,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
+
 ##########
 ### [7] cluster annotation
 ##########
 
-
-
+# set params
+param_set = params_annotation
+param_set$manual_names_annotation = as.list(param_set$manual_names_annotation)
+# make unique id:
+job_id=digest::digest(param_set)
+# write to JSON as transfer file
+param_file = paste0(param_path,"mrtree_annotation_params_",job_id,".json")
+writeList_to_JSON(list_with_rows = param_set,filename = param_file)
+# not a loop
+script_path = "R/run_scripts/mrtree_annotation.R"
+# set sbatch params:
+jobname = paste0("mrtree_annotation_",job_id)
+outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
+errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
+dependency_ids = c(slurm_id_6,slurm_id_6b) ## Might need to adjust this !
+output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
+slurm_id_7 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
 ##########
 ### [8] scMRMR
@@ -249,8 +274,22 @@ slurm_id_6b = stringr::str_remove(output_message,pattern = "Submitted batch job 
 ### [10] regionPrediction with scCoco
 ##########
 
-#TODO: add region_prediction_new and scCoco !
-
+# set params
+param_set = params_annotation
+# make unique id:
+job_id=digest::digest(param_set)
+# write to JSON as transfer file
+param_file = paste0(param_path,"region_prediction_params_",job_id,".json")
+writeList_to_JSON(list_with_rows = param_set,filename = param_file)
+# not a loop
+script_path = "R/run_scripts/region_prediction.R"
+# set sbatch params:
+jobname = paste0("region_prediction_annotation_",job_id)
+outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
+errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
+dependency_ids = c(slurm_id_6,slurm_id_6b) ## Might need to adjust this !
+output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
+slurm_id_7 = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
 ##########
 ### [11] final curation

@@ -126,6 +126,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
   descriptive_markers_list = list()
 
   message("Running annotation")
+  message("Using ",length(manual_names)," manually provided names to overwrite annotation for specific clusters.")
 
   # for each node in edgelist:
   for(n in 1:length(all_nodes)){
@@ -138,10 +139,10 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
     direct_children_nodes = edgelist$to[edgelist$from==current_node]
     current_level = edgelist$clusterlevel[edgelist$to==current_node]
 
+    message("n: ",n," ",current_node)
     # get specific genes
     potential_descriptive_markers =markers_comparisons_all %>% dplyr::filter(cluster_id == current_node) %>% dplyr::arrange(desc(specificity)) %>%
       dplyr::filter(p_val_adj< max_pval_adj & specificity > min_specificity)
-
     # calculate score as adjusted specificity with a minimum value on pct.2 to put more emphasis on pct.1 (abundant markers)
     potential_descriptive_markers$pct.2_min = potential_descriptive_markers$pct.2
     potential_descriptive_markers$pct.2_min[potential_descriptive_markers$pct.2_min < min_pct2_score] = min_pct2_score
@@ -149,7 +150,6 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
 
     # initiate vector with genes that should be excluded!
     exclude_genes=c(manual_exclude_genes)
-
     # message("nrow(potential_descriptive_markers) 1: ",nrow(potential_descriptive_markers))
 
     # eliminate parent and sibling names
@@ -177,7 +177,6 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
     ####
     # ranks in siblings and in children to compare with global rank in own markers
     ####
-
     if(nrow(potential_descriptive_markers)>0){
       # get sibling_markers of children and get inveretd ranks
       sibling_markers_children =markers_comparisons_siblings %>% dplyr::filter(cluster_id %in% children_nodes) %>% dplyr::arrange(desc(specificity))%>%
@@ -203,7 +202,6 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
         potential_descriptive_markers$score_siblings_children = 0
       }
       #message("nrow(potential_descriptive_markers): ",nrow(potential_descriptive_markers))
-
       # check siblings and filter to genes that are also markers to siblings!
       if(length(sibling_nodes)>0){
         # repeat most steps for sibling markers

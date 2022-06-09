@@ -126,7 +126,7 @@ curated_seurat_object@meta.data = curated_seurat_object@meta.data[,!grepl("leide
 #add
 curated_seurat_object@meta.data = cbind(curated_seurat_object@meta.data,mrtree_input_labels)
 
-p1 = DimPlot(curated_seurat_object,group.by = "leiden_clusters_0.05",raster = F,label=TRUE,label.size = 2)+NoLegend() #,label.size = 2
+p1 = DimPlot(curated_seurat_object,group.by = "C63",raster = F,label=TRUE,label.size = 2)+NoLegend() #,label.size = 2
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 

@@ -2,7 +2,7 @@
 ### Load parameters and packages
 ##########
 
-message(Sys.time(),": Starting mrtree pruning .." )
+message(Sys.time(),": Starting mrtree annotation .." )
 
 message(" Load parameters and packages ")
 
@@ -21,11 +21,8 @@ parameter_list = jsonlite::read_json(param_file)
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # test on full
-parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_4.json")
-parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
-parameter_list$marker_suffix = "pruned"
-parameter_list$new_name_suffix=paste0(parameter_list$new_name_suffix,"_curated")
-parameter_list$start_node = "C2-1"
+# parameter_list = jsonlite::read_json("data/parameters_annotation_v2_1.json")
+# parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # read features to excludes
 features_exclude_list= unlist(jsonlite::read_json(parameter_list$genes_to_exclude_file))
@@ -61,10 +58,13 @@ markers_comparisons_siblings  = as.data.frame(do.call(rbind,markers_comparisons_
 message("All markers for: ",length(unique(markers_comparisons_all$cluster_id))," clusters available")
 message("Sibling markers for: ",length(unique(markers_comparisons_siblings$cluster_id))," clusters available")
 
-
-# TODO:
 # load markers for exclusion ad further filter
-# paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$marker_suffix,"_additionally_removed_markers.json")
+# load additional remove
+additional_remove_genes = unlist(jsonlite::read_json(unlist(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$marker_suffix,"_additionally_removed_markers.json"))))
+# gather some other genes that are not informative during annoation:
+other_genes_remove = rownames(harmonized_seurat_object@assays$RNA@counts)[grepl("RP|Gm|Rik|-ps",rownames(harmonized_seurat_object@assays$RNA@counts))]
+# make list of all genes that should be removed:
+all_exclusion_genes = unique(c(features_exclude_list,additional_remove_genes,other_genes_remove))
 
 ##########
 ### Load parameters and packages
@@ -84,7 +84,8 @@ all_nodes = unique(edgelist$to)
 ### Run annotation
 ##########
 
-#table(curated_seurat_object@meta.data$Author_Class_Curated,curated_seurat_object@meta.data$C23)
+message("Starting annotation: ")
+print(parameter_list$manual_names_annotation)
 
 annotation_results = annotate_tree(edgelist = edgelist,#[1:32,],#edgelist = edgelist[1:291,],
                                    labelmat = labelmat,
@@ -93,8 +94,8 @@ annotation_results = annotate_tree(edgelist = edgelist,#[1:32,],#edgelist = edge
                                    preferred_genes=character(0),
                                    manual_names= parameter_list$manual_names_annotation,
                                    overwrite_with_manual = TRUE,
-                                   manual_exclude_genes=features_exclude_list,
-                                   max_pval_adj= parameter_list$max_pvalue_prune,
+                                   manual_exclude_genes=all_exclusion_genes,
+                                   max_pval_adj= parameter_list$max_pval_adj,
                                    min_specificity = parameter_list$min_specificity,
                                    min_specificity_sibling_children= parameter_list$min_specificity_sibling_children,
                                    scale_preferred=1,
@@ -104,46 +105,44 @@ annotation_results = annotate_tree(edgelist = edgelist,#[1:32,],#edgelist = edge
 
 message("Formating annotation results")
 
-# remove existing if running again on same object:
-#harmonized_seurat_object@meta.data = harmonized_seurat_object@meta.data[,!grepl("K*\\_pruned",colnames(harmonized_seurat_object@meta.data))]
-# add to seurat
-#harmonized_seurat_object@meta.data = cbind(harmonized_seurat_object@meta.data,temp)
-
-a0=annotation_results$annotation_df
-a1=annotation_results$descriptive_markers_df
-
-## get annotation names
-new_pruned_names = ""
+## get annotation
 annotation_df = annotation_results$annotation_df
-annotation_df$clean_names[annotation_df$clean_names==""] = "hypothalamus"
-cell_cluster_map =harmonized_seurat_object@meta.data[,c("Cell_ID",new_pruned_names)] %>% tidyr::gather(-Cell_ID,key="clusterlevel",value="cluster_id")
+# update cluster names with ID
+annotation_df$clean_names_withID = paste0(annotation_df$cluster_id,": ",annotation_df$clean_names)
+# get labelmat and add cell ids
+labelmat_updated = cbind(Cell_ID=harmonized_seurat_object@meta.data$Cell_ID,mrtree_result$labelmat)
+# make a per cell cluster annotation
+cell_cluster_map = labelmat_updated %>% as.data.frame() %>% tidyr::gather(-Cell_ID,key="clusterlevel",value="cluster_id")
 cell_cluster_map$clusterlevel = gsub("_pruned","",cell_cluster_map$clusterlevel)
-annotation_df_wide = annotation_df%>% dplyr::left_join(cell_cluster_map,by=c("clusterlevel"="clusterlevel","cluster_id"="cluster_id")) %>%
-  dplyr::select(Cell_ID,clusterlevel,clean_names)  %>% tidyr::spread(key = clusterlevel,value = clean_names)
+# make wide version of labelmat ( that can be added to seurat metadata)
+annotation_df_wide = annotation_df %>% dplyr::left_join(cell_cluster_map,by=c("clusterlevel"="clusterlevel","cluster_id"="cluster_id")) %>%
+  dplyr::select(Cell_ID,clusterlevel,clean_names_withID)  %>% tidyr::spread(key = clusterlevel,value = clean_names_withID)
 colnames(annotation_df_wide)[2:ncol(annotation_df_wide)] = paste0(colnames(annotation_df_wide)[2:ncol(annotation_df_wide)],"_named")
+# sort columns in mrtree annotation wide
+vec_with_numbers = as.numeric(stringr::str_extract(colnames(annotation_df_wide),"[0-9]+"))
+names(vec_with_numbers) = colnames(annotation_df_wide)
+sorted_colnames = names(sort(vec_with_numbers,na.last = FALSE))
+annotation_df_wide = annotation_df_wide[,sorted_colnames]
 
 # remove existing if running again on same object:
-harmonized_seurat_object@meta.data = harmonized_seurat_object@meta.data[,!grepl("C*\\_named",colnames(harmonized_seurat_object@meta.data))]
-# add to seurat
-harmonized_seurat_object@meta.data= dplyr::left_join(harmonized_seurat_object@meta.data,annotation_df_wide,by="Cell_ID")
-rownames(harmonized_seurat_object@meta.data) =  harmonized_seurat_object@meta.data$Cell_ID
-
-#data.table::fwrite(annotation_df,file = paste0(harmonization_file_path,project_name,"_annotation_labels.txt") ,sep="\t")
-
-# add annotation_df to seurat misc
-annotation_df_add = annotation_df %>% dplyr::select(cluster_id,cluster_name = clean_names, clusterlevel, ncells)
-harmonized_seurat_object@misc$annotations = annotation_df_add
+# harmonized_seurat_object@meta.data = harmonized_seurat_object@meta.data[,!grepl("C*\\_named",colnames(harmonized_seurat_object@meta.data))]
+# # add to seurat
+# harmonized_seurat_object@meta.data= dplyr::left_join(harmonized_seurat_object@meta.data,annotation_df_wide,by="Cell_ID")
+# rownames(harmonized_seurat_object@meta.data) =  harmonized_seurat_object@meta.data$Cell_ID
 
 ## clean markers
 descriptive_markers_df = annotation_results$descriptive_markers_df
-descriptive_markers_df = dplyr::left_join(descriptive_markers_df,annotation_df,by=c("cluster_id"="cluster_id"))
-harmonized_seurat_object@misc$curated_markers = descriptive_markers_df
-#data.table::fwrite(descriptive_markers_df,file = paste0(harmonization_file_path,project_name,"_curated_markers.txt") ,sep="\t")
+descriptive_markers_df = dplyr::left_join(descriptive_markers_df,annotation_df[,c("cluster_id","clean_names","clean_names_withID")],by=c("cluster_id"="cluster_id"))
 
 ##########
 ### Save annotation
 ##########
 
+data.table::fwrite(annotation_df,file = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_annotation_result.txt") ,sep="\t")
+
+data.table::fwrite(annotation_df_wide,file = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_annotation_labelmat.txt") ,sep="\t")
+
+data.table::fwrite(descriptive_markers_df,file = paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_annotation_markers_filtered.txt") ,sep="\t")
 
 
 
