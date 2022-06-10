@@ -270,7 +270,8 @@ data.table::fwrite(result_region,file = paste0(parameter_list$harmonization_fold
 # all other information as rds
 full_res_list = list(full_region_prediction_result = hypoMap_region_annotation_full,
                      dataset_pct_adjusted_per_region = dataset_info_wide,
-                     regionweight_per_cluster = regionweight_per_cluster)
+                     regionweight_per_cluster = regionweight_per_cluster,
+                     dataset_weight_enrichment_per_cluster = dataset_weight_enrichment_per_cluster)
 saveRDS(full_res_list,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_region_prediction_all_results.rds"))
 
 message(Sys.time(),": Finalized .." )

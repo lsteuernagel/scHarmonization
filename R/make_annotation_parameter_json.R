@@ -48,8 +48,8 @@ param_list$manual_names_annotation = as.list(c("C2-1" = "Neurons",
                                            "C23-3"= "vGLUT-3",
                                            "C23-4"= "vGLUT-4",
                                            "C23-5"= "vGLUT-5",
-                                           "C23-6"= "vGLUT-6-Pmch",
-                                           "C23-7"= "vGLUT-7-Foxb1",
+                                           "C23-6"= "vGLUT-6", # Pmch
+                                           "C23-7"= "vGLUT-7", # Foxb1
                                            "C23-8"= "vGLUT-8",
                                            "C23-9"= "vGLUT-9",
                                            "C23-10"="GABA-3",
@@ -57,7 +57,7 @@ param_list$manual_names_annotation = as.list(c("C2-1" = "Neurons",
                                            "C23-12"="GABA-1",
                                            "C23-13"="GABA-4",
                                            "C23-14"="GABA-5",
-                                           "C23-15"="GABA-6-Chat",
+                                           "C23-15"="GABA-6", # Chat
                                            "C23-16"="Ependymal-like",
                                            "C23-17"= "Astrocytes",
                                            "C23-18"= "Oligodendrocytes",
@@ -87,7 +87,7 @@ param_list$aba_ccf_grid_annotation_file  = "/beegfs/scratch/bruening_scratch/lst
 param_list$mba_ontology_flatten_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/allen_brain/ish_data_voxel/mba_ontology_flatten.tsv"
 
 # region prediction ABA:
-param_list$cluster_column = "C180"
+param_list$cluster_column = "C280"
 param_list$start_node_tree = "C2-1"
 # filtering of marker genes
 param_list$min_specificity = 4

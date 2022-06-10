@@ -41,7 +41,7 @@ table(curated_seurat_object@meta.data$Dataset)
 mediobasal_hypo = c("Ventromedial hypothalamic nucleus","Arcuate hypothalamic nucleus","Median eminence","Dorsomedial nucleus of the hypothalamus","Periventricular hypothalamic nucleus, posterior part",
                     "Ventral premammillary nucleus","Paraventricular hypothalamic nucleus","Periventricular hypothalamic nucleus, intermediate part","Tuberal nucleus","Anterior hypothalamic nucleus") # added peri and paraventricular hypo because they are typicall also included
 lateral_hypo = c("Lateral hypothalamic area","Zona incerta","Tuberal nucleus","Subthalamic nucleus","Parasubthalamic nucleus","Preparasubthalamic nucleus","Retrochiasmatic area")
-scn_hypo = c("Subparaventricular zone","Suprachiasmatic nucleus","Anterior hypothalamic nucleus","Suprachiasmatic preoptic nucleus","Retrochiasmatic area","Paraventricular hypothalamic nucleus","Periventricular hypothalamic nucleus, preoptic part","Medial preoptic area","Medial preoptic nucleus","Periventricular hypothalamic nucleus, anterior part")
+scn_hypo = c("Subparaventricular zone","Suprachiasmatic nucleus","Anterior hypothalamic nucleus","Suprachiasmatic preoptic nucleus","Retrochiasmatic area","Paraventricular hypothalamic nucleus","Periventricular hypothalamic nucleus, preoptic part","Medial preoptic area","Medial preoptic nucleus","Median preoptic nucleus","Periventricular hypothalamic nucleus, anterior part")
 
 suggested_region_per_dataset = list(Affinati10x = mediobasal_hypo,
                                     Anderson10x = c(mediobasal_hypo,"Lateral hypothalamic area"),
@@ -53,7 +53,7 @@ suggested_region_per_dataset = list(Affinati10x = mediobasal_hypo,
                                     KimDev10x =  relevant_structures,
                                     LeeDropseq = relevant_structures,
                                     Mickelsen10x = lateral_hypo,
-                                    Moffit10x = c("Lateral preoptic area","Medial preoptic area", "Median preoptic nucleus","Medial preoptic nucleus","Periventricular hypothalamic nucleus preoptic part",
+                                    Moffit10x = c("Lateral preoptic area","Medial preoptic area", "Median preoptic nucleus","Medial preoptic nucleus","Median preoptic nucleus","Periventricular hypothalamic nucleus preoptic part",
                                                   "Periventricular hypothalamic nucleus, anterior part","Ventrolateral preoptic nucleus","Posterodorsal preoptic nucleus","Anteroventral periventricular nucleus",
                                                   "Supraoptic nucleus","Parastrial nucleus","Anterodorsal preoptic nucleus" ,"Paraventricular hypothalamic nucleus","Suprachiasmatic preoptic nucleus" ),
                                     Morris10x = scn_hypo,
