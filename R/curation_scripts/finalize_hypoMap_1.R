@@ -38,7 +38,7 @@ min_specificity_markers_seurat = 1.5
 # load seurat
 curated_seurat_object = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,".rds"))
 
-curated_seurat_object@meta.data = curated_seurat_object@meta.data[,1:43]
+#curated_seurat_object@meta.data = curated_seurat_object@meta.data[,1:43]
 
 # load mrtree clustering
 mrtree_result = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_mrtree_clustering_results",".rds"))
@@ -55,11 +55,18 @@ region_prediction = data.table::fread(paste0(parameter_list$harmonization_folder
 ### Adjust annotation and add to seurat
 ##########
 
+# sort annoation labelmat to metadata
+annotation_labelmat = annotation_labelmat[match(curated_seurat_object@meta.data$Cell_ID,annotation_labelmat$Cell_ID),]
+
 # add labels with annotation
 label_df = cbind(mrtree_result$labelmat,annotation_labelmat %>% dplyr::select(-Cell_ID)) %>% as.data.frame()
 
 ## add labels to seurat:
 curated_seurat_object@meta.data = cbind(curated_seurat_object@meta.data , label_df)
+
+# check that named labels are ordered correctly:
+p1 = DimPlot(curated_seurat_object,group.by = "C180_named",raster = F,label.size = 2,label = TRUE)+NoLegend()
+scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 
 ##########
@@ -146,7 +153,7 @@ annotation_result_with_region$Region_curated[annotation_result_with_region$clust
 
 # overwrite Ghrh C280-21 Prdm8
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5782816/
-"C280-21" = "Periventricular hypothalamic nucleus, preoptic part"
+#"C280-21" = "Periventricular hypothalamic nucleus, preoptic part"
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-21"] = "Periventricular hypothalamic nucleus, preoptic part"
 
 # Qrfp: Lateral hypothalamic area
@@ -272,9 +279,9 @@ rownames(temp) = temp$Cell_ID
 curated_seurat_object@meta.data = temp
 
 # check:
-color_value_vector =unlist(jsonlite::read_json("data/region_prediction_mapping_colors.json"))
-p1 = DimPlot(curated_seurat_object,group.by = "Region_summarized",raster = F)+ggplot2::scale_color_manual(values = color_value_vector,na.value = "grey80")
-scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
+# color_value_vector =unlist(jsonlite::read_json("data/region_prediction_mapping_colors.json"))
+# p1 = DimPlot(curated_seurat_object,group.by = "Region_summarized",raster = F)+ggplot2::scale_color_manual(values = color_value_vector,na.value = "grey80")
+# scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 ##########
 ### Clean up metadata

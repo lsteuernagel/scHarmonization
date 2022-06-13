@@ -123,6 +123,8 @@ vec_with_numbers = as.numeric(stringr::str_extract(colnames(annotation_df_wide),
 names(vec_with_numbers) = colnames(annotation_df_wide)
 sorted_colnames = names(sort(vec_with_numbers,na.last = FALSE))
 annotation_df_wide = annotation_df_wide[,sorted_colnames]
+# ensure order makes sense
+annotation_df_wide = annotation_df_wide[match(harmonized_seurat_object@meta.data$Cell_ID,annotation_df_wide$Cell_ID),]
 
 # remove existing if running again on same object:
 # harmonized_seurat_object@meta.data = harmonized_seurat_object@meta.data[,!grepl("C*\\_named",colnames(harmonized_seurat_object@meta.data))]
