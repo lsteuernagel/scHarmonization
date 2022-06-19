@@ -206,8 +206,8 @@ plot_cluster_tree = function(edgelist,heatmap_matrix=NULL,heatmap_matrix2 = NULL
       circular_tree_heat <- gheatmap(circular_tree,data=heatmap_matrix,offset = matrix_offset , width = matrix_width,colnames = heatmap_colnames,
                                      colnames_angle=colnames_angle,font.size=heatmap_text_size,hjust = hjust_colnames)+
         scale_fill_gradientn(colours = heatmap_colors,limits=scale_limits,oob=squish,na.value = na_color) +
-        theme(legend.text=element_text(size=legend_text_size)) +
-        guides(fill=ggplot2::guide_colourbar(title=legend_title_1)) # guide_colourbar for continous
+        theme(legend.text=element_text(size=legend_text_size))# +
+      #  guides(fill=ggplot2::guide_colourbar(title=legend_title_1)) # guide_colourbar for continous
     }else{
       circular_tree_heat <- gheatmap(circular_tree_heat, heatmap_matrix, offset=matrix_offset, width=matrix_width,colnames = heatmap_colnames,
                                      colnames_angle=colnames_angle,font.size=heatmap_text_size,hjust = hjust_colnames)+

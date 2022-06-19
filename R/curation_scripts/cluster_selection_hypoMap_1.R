@@ -108,7 +108,14 @@ apply(mrtree_input_labels,2,function(x){length(table(x))})
 ##########
 # pomc glipr1 and bace2+ to GABA clusters:
 mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "125"] = "32"
-mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "84"] = "32"
+mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "84"] = "24"
+# tmem215
+mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "76"] = "34"
+
+# sst
+mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "163"] = "42"
+mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "41"] = "42"
+
 
 # strange immune cells to immune:
 mrtree_input_labels$leiden_clusters_0.05[mrtree_input_labels$leiden_clusters_0.5 == "60"] = "7"
@@ -126,7 +133,7 @@ curated_seurat_object@meta.data = curated_seurat_object@meta.data[,!grepl("leide
 #add
 curated_seurat_object@meta.data = cbind(curated_seurat_object@meta.data,mrtree_input_labels)
 
-p1 = DimPlot(curated_seurat_object,group.by = "C63",raster = F,label=TRUE,label.size = 2)+NoLegend() #,label.size = 2
+p1 = DimPlot(curated_seurat_object,group.by = "leiden_clusters_0.5",raster = F,label=TRUE,label.size = 2)+NoLegend() #,label.size = 2
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 

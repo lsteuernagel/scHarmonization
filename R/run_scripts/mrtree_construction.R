@@ -29,6 +29,7 @@ cluster_matrix_for_mrtree = data.table::fread(paste0(parameter_list$harmonizatio
 # ensure that cells are in right order!
 # TODO
 
+message("parameter_list$use_recon_labelmat: ",parameter_list$use_recon_labelmat)
 
 ##########
 ### Run mrtree
@@ -44,7 +45,7 @@ cluster_matrix_for_mrtree <- apply(cluster_matrix_for_mrtree, 2, as.character)
 cluster_matrix_for_mrtree <- apply(cluster_matrix_for_mrtree, 2, as.numeric)
 #print(head(cluster_matrix_for_mrtree))
 
-message(Sys.time(),": Build mrtree" )
+message(Sys.time(),": Build mrtree using matrix with: ",dim(cluster_matrix_for_mrtree)[1]," cells and ",dim(cluster_matrix_for_mrtree)[2]," cluster levels." )
 # feed into mrtree
 # function from 'mrtree_functions.R' which is copied from original repo
 mrtree_res <- mrtree(cluster_matrix_for_mrtree,
@@ -54,10 +55,12 @@ mrtree_res <- mrtree(cluster_matrix_for_mrtree,
                      consensus = FALSE,
                      sample.weighted = FALSE, # parameter_list$mr_tree_weighted,
                      augment.path = FALSE,
-                     verbose = FALSE,
+                     verbose = TRUE,
                      n.cores = parameter_list$n_cores)
 
-saveRDS(mrtree_res,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated","_mrtree_res_raw",".rds"))
+message(Sys.time(),": Save raw result of length ",length(mrtree_res)," to: ",paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix"_mrtree_res_raw",".rds"))
+
+saveRDS(mrtree_res,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix"_mrtree_res_raw",".rds"))
 
 message(Sys.time(),": Create mrtree ouput list" )
 
