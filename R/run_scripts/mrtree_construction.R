@@ -58,9 +58,9 @@ mrtree_res <- mrtree(cluster_matrix_for_mrtree,
                      verbose = TRUE,
                      n.cores = parameter_list$n_cores)
 
-message(Sys.time(),": Save raw result of length ",length(mrtree_res)," to: ",paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix"_mrtree_res_raw",".rds"))
+saveRDS(mrtree_res,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_mrtree_res_raw",".rds"))
 
-saveRDS(mrtree_res,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix"_mrtree_res_raw",".rds"))
+message(Sys.time(),": Saved raw result of length ",length(mrtree_res)," to: ",paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_mrtree_res_raw",".rds"))
 
 message(Sys.time(),": Create mrtree ouput list" )
 
