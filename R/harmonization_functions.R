@@ -249,7 +249,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
     # take top result as cluster descriptive gene
     if(nrow(potential_descriptive_markers)>0){
       # don't select sibling or parent gene
-      potential_descriptive_markers_sel =potential_descriptive_markers %>% dplyr::filter(! gene %in% reserved_genes) %>% dplyr::arrange(desc(avg_score))
+      potential_descriptive_markers_sel =potential_descriptive_markers %>% dplyr::filter(! gene %in% reserved_genes) %>% dplyr::arrange(desc(mult_score))
       #reserved_genes
       # select top gene
       name_gene = potential_descriptive_markers_sel$gene[1]

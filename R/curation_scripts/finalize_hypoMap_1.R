@@ -139,6 +139,17 @@ curated_seurat_object@misc$clustering_edgelist = mrtree_result$edgelist
 ### Adjust predicted regions and summarize
 ##########
 
+# read full prediction result:
+full_region_prediction = readRDS(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$marker_suffix,"_region_prediction_all_results.rds"))
+scores_per_target_level_region_all=full_region_prediction$full_region_prediction_result$scores_per_target_level_region_all %>% as.data.frame()
+
+## check in there:
+target = "C280-157"
+scores_per_target_level_region_all[,c("topname",target)] %>% dplyr::arrange(desc(!!sym(target))) %>% top_n(n = 10,wt=!!sym(target))
+markers_comparisons_all[markers_comparisons_all$cluster_id == target,] %>% dplyr::arrange(desc(specificity)) %>% dplyr::top_n(10,wt = specificity) %>% dplyr::select(gene,specificity,pct.1,pct.2)
+annotation_result_with_region[annotation_result_with_region$cluster_id == target,] %>% t()
+sort(table(curated_seurat_object@meta.data$Dataset[curated_seurat_object@meta.data$C280 == target]),decreasing = TRUE)
+
 # read color scheme --> important !!
 #color_value_vector =unlist(jsonlite::read_json("data/region_prediction_mapping_colors.json"))
 annotation_result_with_region = dplyr::left_join(annotation_result,region_prediction,by=c("cluster_id"="cluster")) %>% dplyr::filter(clusterlevel=="C280")
@@ -171,15 +182,16 @@ annotation_result_with_region$Region_curated[annotation_result_with_region$clust
 
 # "C280-3" = NA # NSCs
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-3"] = NA
-# "C280-10" = "Lateral hypothalamic area"
-annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-10"] = "Lateral hypothalamic area"
-# "C280-8" = "Lateral hypothalamic area"
+# "C280-10" = "Lateral hypothalamic area" --> Ebf3/Sim1 . Not clear from prediction could be PVH or LH
+annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-10"] = NA #"Lateral hypothalamic area"
+# "C280-8" = "Lateral hypothalamic area" NPW neurons
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-8"] = "Lateral hypothalamic area"
-#"C280-28" = NA # not clear
-annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-28"] = NA
-#"C280-29" = "Ventromedial hypothalamic nucleus"
+#"C280-28" = NA # not clear mostly Flyn/Dowsett/rupp, Medial mammillary nucleus seems likely
+# see: https://pubmed.ncbi.nlm.nih.gov/19111912/ Lmx1a (--> and Ngfr)
+annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-28"] = "Medial mammillary nucleus"
+#"C280-29" = "Ventromedial hypothalamic nucleus" --> Fezf1+ but too few markers for reliable prediction
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-29"] = "Ventromedial hypothalamic nucleus"
-#"C280-42" = "Ventromedial hypothalamic nucleus" # clearly VMH
+#"C280-42" = "Ventromedial hypothalamic nucleus" # clearly VMH with Esr1 /Cd40+ but ARC prediction was slightly higher
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-42"] = "Ventromedial hypothalamic nucleus"
 # C280-52" = NA # not clear
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-52"] = NA
@@ -193,47 +205,55 @@ annotation_result_with_region$Region_curated[annotation_result_with_region$clust
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-57"] = "Dorsomedial nucleus of the hypothalamus"
 
 # others:
-#"C280-108" = NA # not clear
+#"C280-108" = NA # not clear Pthlh neurons but nt sure from where exatcly
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-108"] = NA
 #"C280-109" = NA # not clear, maybe lateral or
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-109"] = NA
 #"C280-117" = NA # not clear
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-117"] = NA
-#"C280-105" = NA # not clear
+#"C280-105" = NA # not clear, probably posterior Satb1+
+# https://www.sciencedirect.com/science/article/pii/S0168010211001519?via%3Dihub
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-105"] = NA
-# "C280-167" = "Posterior hypothalamic nucleus" # just based on ABA prediction#
-annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-167"] = "Posterior hypothalamic nucleus"
+# "C280-167" = "Posterior hypothalamic nucleus"unclear!
+annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-167"] = NA#"Posterior hypothalamic nucleus"
 #"C280-164" = "Zona incerta" # just based on ABA prediction
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-164"] = "Zona incerta"
-#"C280-182" = NA # not clear
+#"C280-182" = NA # not clear (ARC ME predicted but many SCN cells ?)
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-182"] = NA
 # "C280-71" keep as is
-#"C280-140" = "Lateral hypothalamic area" # maybe
+#"C280-140" = "Lateral hypothalamic area" Crhbp+ and many LH dataset cells
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-140"] =  "Lateral hypothalamic area"
-#"C280-195" = NA
-annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-195"] =  NA
-#"C280-38" = NA
+#"C280-195" = NA keep as ARC cluster
+# annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-195"] =  NA
+#"C280-38" = NA --> prediction too low
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-38"] =  NA
 #"C280-157" = "Median preoptic nucleus" # seems right
-annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-157"] =  "Median preoptic nucleus"
-#"C280-137" = NA
-annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-137"] =  NA
-#"C280-123" = NA # not really clear from where
+# annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-157"] =  "Median preoptic nucleus"
+#"C280-137" = NA = "Median preoptic nucleus" # seems right
+#annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-137"] =  NA
+#"C280-123" = NA # not really clear from where (prediction more anterior, but datasets more posterior)
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-123"] =  NA
-#"C280-41" = "Medial mammillary nucleus" # overwrite
-annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-41"] =  "Medial mammillary nucleus"
+#"C280-41" = "Medial mammillary nucleus" # overwrite --> don't seems to be VMH cluster!!
+# annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-41"] =  "Medial mammillary nucleus"
 
 
 # hdc nueorns in uerbomamillary
-annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-126"] =  "Tuberomamillary nucleus"
+# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5618271/
+# 12 are in fact not hdc+!!
+#annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-126"] =  "Tuberomamillary nucleus"
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-127"] =  "Tuberomamillary nucleus"
+# Medial mammillary nucleus seems best, also gets the highest prediction !
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-82"] =  "Medial mammillary nucleus"
 
 # some PVH clusters with Sim1+:
+# Trh/Crh+
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-22"] =  "Paraventricular hypothalamic nucleus"
+# PVH is second highest score and Trh+
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-13"] =  "Paraventricular hypothalamic nucleus"
+# not so sure about this one !
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-15"] =  "Paraventricular hypothalamic nucleus"
 # C280-18 is indeed Lateral hypothalamic area
+
 # set these to NA
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-10"] =  NA
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-12"] =  NA
@@ -268,6 +288,7 @@ annotation_result_with_region$Region_curated[annotation_result_with_region$clust
 #"C280-192" = NA  # not really clear
 annotation_result_with_region$Region_curated[annotation_result_with_region$cluster_id == "C280-192"] =  NA
 
+annotation_result_with_region$Region_curated[annotation_result_with_region$Region_curated==""] =NA
 
 # add region for coloring:
 hypothalamus_regions_mapping = data.table::fread("data/region_prediction_mapping.tsv",data.table = FALSE)
@@ -309,6 +330,9 @@ data.table::fwrite(markers_comparisons_siblings_final,paste0(parameter_list$fina
 data.table::fwrite(as.data.frame(mrtree_result$labelmat),paste0(parameter_list$final_output_folder,parameter_list$file_name_prefix,"_mrtree_labelmat.tsv"),sep="\t")
 data.table::fwrite(mrtree_result$edgelist,paste0(parameter_list$final_output_folder,parameter_list$file_name_prefix,"_mrtree_edgelist.tsv"),sep="\t")
 data.table::fwrite(annotation_result,paste0(parameter_list$final_output_folder,parameter_list$file_name_prefix,"_annotation_result.tsv"),sep="\t")
+
+# copy model
+system(paste0("cp -r ",parameter_list$harmonization_folder_path,"hypoMap_harmonized_scVI_model","/  ",parameter_list$final_output_folder))
 
 # save data to rds
 saveRDS(curated_seurat_object,paste0(parameter_list$final_output_folder,parameter_list$file_name_prefix,".rds"))
