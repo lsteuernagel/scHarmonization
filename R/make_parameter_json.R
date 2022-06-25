@@ -4,7 +4,7 @@
 param_list = list()
 
 # must be loaded from params:
-param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_harmonization/"
+param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2c_harmonization/"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_harmonization/"
 #param_list$processed_suffix = "_seurat_processed"
 
 # for final merged object:
@@ -27,7 +27,7 @@ param_list$assay_name = "RNA"
 param_list$integration_name = "scvi"
 
 # scvi integration:
-param_list$categorical_covariates = c("Dataset",param_list$batch_var)
+param_list$categorical_covariates =character(0) # param_list$batch_var#c("Dataset",param_list$batch_var)
 param_list$continuous_covariates =character(0)
 param_list$n_layers = 3
 param_list$n_latent = 85
@@ -51,7 +51,7 @@ param_list$step_size_initial = 1
 param_list$include_low_res_initial = FALSE
 
 ## full clustering
-param_list$target_clusterN = 600
+param_list$target_clusterN = 700
 param_list$start_res = 1
 param_list$end_res = 50
 param_list$step_size = 1
@@ -94,4 +94,4 @@ param_list$batch_var = param_list$batch_var
 param_list$start_nodes_annotation_markers = c("C2-1","C2-2") # can also just be = start_nodes_pruning_markers  # use this when there are multiple marker tables after splitting the marker detection
 
 # save
-scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_4.json")
+scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_7.json")

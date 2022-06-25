@@ -94,10 +94,11 @@ else:
   
 print("categorical_covariate_keys: "+str(categorical_covariates))
 print("continuous_covariate_keys: "+str(continuous_covariates))
+print("batch_key: "+str(batch_var))
 adata_scvi = adata.copy()
 # setup for scvi
 # Imporant: I am only using the categorical_covariate_keys to describe the batch variable(s) --> unambigous way to specify 1-many cvovariates as batches
-scvi.model.SCVI.setup_anndata(adata_scvi, categorical_covariate_keys=categorical_covariates,continuous_covariate_keys=continuous_covariates)
+scvi.model.SCVI.setup_anndata(adata_scvi, batch_key = batch_var,categorical_covariate_keys=categorical_covariates,continuous_covariate_keys=continuous_covariates)
 
 # for all parameter combinations
 print("Run scVI")

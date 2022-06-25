@@ -14,14 +14,14 @@ param_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_par
 log_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_slurmlogs/"
 
 # load json file with all other information
-params_harmonization = jsonlite::read_json("data/parameters_harmonization_v2_4.json")
+params_harmonization = jsonlite::read_json("data/parameters_harmonization_v2_7.json")
 # if some fields are lists --> unlist
 params_harmonization = lapply(params_harmonization,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
 # update suffix name:
 params_harmonization$new_name_suffix = paste0(params_harmonization$new_name_suffix,"_curated")
 
-### try to creat dir if necessary:
+### try to create dir if necessary:
 system(paste0("mkdir -p ",paste0(param_path)))
 system(paste0("mkdir -p ",paste0(log_path)))
 system(paste0("mkdir -p ",paste0(params_harmonization$harmonization_folder_path)))
