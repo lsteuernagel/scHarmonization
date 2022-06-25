@@ -14,7 +14,7 @@ param_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_par
 log_path = "/beegfs/scratch/bruening_scratch/lsteuernagel/slurm/hypoMap_v2_slurmlogs/"
 
 # load json file with all other information
-params_harmonization = jsonlite::read_json("data/parameters_harmonization_v2_7.json")
+params_harmonization = jsonlite::read_json("data/parameters_harmonization_v2_8.json")
 # if some fields are lists --> unlist
 params_harmonization = lapply(params_harmonization,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
@@ -226,7 +226,7 @@ slurm_id_6b = stringr::str_remove(output_message,pattern = "Submitted batch job 
 
 
 ##########
-### Read parameters fro annotation
+### Read parameters for annotation
 ##########
 
 # load json file with all other information

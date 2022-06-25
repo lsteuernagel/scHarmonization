@@ -41,6 +41,7 @@ additional_clustering_suffix = parameter_dict["additional_clustering_suffix"]
 resolutions = [round(x*step_size,3) for x in range(int(1/step_size)*start_res,int(1/step_size)*end_res+1)]
 if(include_low_res):
   low_res_list = [0.001,0.005,0.01,0.05,0.1,0.175,0.25,0.5,0.75]
+  #low_res_list = [0.001,0.005,0.0075,0.01,0.05,0.1,0.175,0.25,0.5,0.75,3,5,6,7,15,16,28,37,38,45,50]
   resolutions = low_res_list + resolutions
   
   

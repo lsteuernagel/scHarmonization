@@ -204,7 +204,7 @@ curated_seurat_object = FindNeighbors(curated_seurat_object,
 p1 = DimPlot(curated_seurat_object,group.by = "Author_Class_Curated",raster = F)
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
-p1=FeaturePlot(curated_seurat_object,features = "Crabp1",raster = F,order=TRUE)
+p1=FeaturePlot(curated_seurat_object,features = "Bace1",raster = F,order=TRUE)
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 ##########

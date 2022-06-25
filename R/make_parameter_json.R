@@ -10,7 +10,7 @@ param_list$harmonization_folder_path = "/beegfs/scratch/bruening_scratch/lsteuer
 # for final merged object:
 param_list$merged_file = "/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_rawdata/hypoMap_merged_filtered.rds"#"/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_integration/hypoMap_v2_downsampled_example.rds"#
 param_list$new_name_suffix = "hypoMap_harmonized"#
-param_list$additional_clustering_suffix = ""
+param_list$additional_clustering_suffix = "_selected_fast"
 
 # signature for evaluation
 param_list$genes_to_exclude_file = "data/features_exclude_list2.json"
@@ -53,7 +53,7 @@ param_list$include_low_res_initial = FALSE
 ## full clustering
 param_list$target_clusterN = 700
 param_list$start_res = 1
-param_list$end_res = 50
+param_list$end_res = 2
 param_list$step_size = 1
 param_list$include_low_res = TRUE
 param_list$min_cells_valid = 5
@@ -94,4 +94,4 @@ param_list$batch_var = param_list$batch_var
 param_list$start_nodes_annotation_markers = c("C2-1","C2-2") # can also just be = start_nodes_pruning_markers  # use this when there are multiple marker tables after splitting the marker detection
 
 # save
-scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_7.json")
+scUtils::writeList_to_JSON(param_list,filename = "data/parameters_harmonization_v2_8.json")

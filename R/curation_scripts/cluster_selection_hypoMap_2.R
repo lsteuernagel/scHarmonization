@@ -8,7 +8,7 @@ library(dplyr)
 source("R/harmonization_functions.R")
 
 # load json file with all other information
-parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_5.json")
+parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_7.json")
 # if some fields are lists --> unlist
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 
@@ -16,7 +16,7 @@ file_name_prefix = paste0(parameter_list$harmonization_folder_path,parameter_lis
 
 # load clusters
 hypoMap_clustering = data.table::fread(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_curated","_leiden_clustering.txt"),data.table = F)
-#hypoMap_clustering3 = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2_harmonization/hypoMap_harmonized_curated_extracluster4_leiden_clustering.txt",data.table = F)
+hypoMap_clustering = data.table::fread("/beegfs/scratch/bruening_scratch/lsteuernagel/data/hypoMap_v2c_harmonization/hypoMap_harmonized_curated_selected_fast_leiden_clustering.txt",data.table = F)
 #hypoMap_clustering = hypoMap_clustering[,c(1,3:ncol(hypoMap_clustering))]
 
 # load seurat
@@ -36,14 +36,20 @@ sort(apply(hypoMap_clustering_clear,2,function(x){length(table(x))}))
 # add cell id
 hypoMap_clustering_clear = dplyr::bind_cols(Cell_ID = hypoMap_clustering$Cell_ID,hypoMap_clustering_clear)
 # drop
-hypoMap_clustering_clear = hypoMap_clustering_clear[,!grepl("_48|_19|_7",colnames(hypoMap_clustering_clear))]
+#hypoMap_clustering_clear = hypoMap_clustering_clear[,!grepl("_48|_19|_7",colnames(hypoMap_clustering_clear))]
 
-curated_seurat_object@meta.data$temp_cluster = hypoMap_clustering_clear$leiden_clusters_6
-p1 = DimPlot(curated_seurat_object,group.by = "temp_cluster",raster = F,label=TRUE)+NoLegend()
+curated_seurat_object@meta.data$temp_cluster = hypoMap_clustering_clear$leiden_clusters_45
+p1 = DimPlot(curated_seurat_object,group.by = "temp_cluster",raster = F,label=TRUE,label.size = 2,repel = TRUE)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 p1 = DimPlot(curated_seurat_object,group.by = "Author_Class_Curated",raster = F,label=TRUE)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
+
+p1=FeaturePlot(curated_seurat_object,features = "Pax6",raster = F,order=TRUE)
+scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
+
+a1 = scUtils::gene_pct_cluster(curated_seurat_object,genes = c("Pax6","Trh","Gng8","Slc17a6"),col_name = "temp_cluster")
+a1$cluster = rownames(a1)
 
 ##########
 ### define cluster for mrtree
@@ -79,10 +85,11 @@ cluster_cols
 # mrtree_input_labels = hypoMap_clustering_clear[,cluster_cols]
 
 # add
-cluster_cols[cluster_cols == "leiden_clusters_3"] = "leiden_clusters_6"
-#cluster_cols[cluster_cols == "leiden_clusters_3"] = "leiden_clusters_6"
-cluster_cols[cluster_cols == "leiden_clusters_13"] = "leiden_clusters_16"
-
+cluster_cols[cluster_cols == "leiden_clusters_0.25"] = "leiden_clusters_0.5"
+cluster_cols[cluster_cols == "leiden_clusters_0.75"] = "leiden_clusters_6"
+cluster_cols = cluster_cols[cluster_cols!="leiden_clusters_3"]
+cluster_cols[cluster_cols == "leiden_clusters_15"] = "leiden_clusters_16"
+cluster_cols[cluster_cols == "leiden_clusters_50"] = "leiden_clusters_45"
 #hypoMap_clustering_clear2 = hypoMap_clustering_clear[hypoMap_clustering_clear$Cell_ID %in% curated_seurat_object@meta.data$Cell_ID,]
 
 mrtree_input_labels = hypoMap_clustering_clear[,cluster_cols]
@@ -106,23 +113,52 @@ apply(mrtree_input_labels,2,function(x){length(table(x))})
 ##########
 ### manually adjust some clusters
 ##########
-# pomc glipr1 and bace2+ to GABA clusters:
-mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "125"] = "32"
-mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "84"] = "24"
-# tmem215
-mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "76"] = "34"
+
+
+
+##########
+### manually adjust some clusters
+##########
+
+## move tac2 to other vglut2+
+mrtree_input_labels$leiden_clusters_0.0075[mrtree_input_labels$leiden_clusters_0.0075 == "6"] = "1"
+# move Pomc to otehr vglu2+
+mrtree_input_labels$leiden_clusters_0.0075[mrtree_input_labels$leiden_clusters_0.05 == "12"] = "1"
+
+# Tbx19/pirt _--- > no fine
+# mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "79"] = "34"
 
 # sst
-mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "163"] = "42"
-mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "41"] = "42"
+mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "169"] = "41"
+mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "40"] = "41"
+
+
+# Grnh1+
+mrtree_input_labels$leiden_clusters_0.05[mrtree_input_labels$leiden_clusters_0.5 == "66"] = "23" # make its own neuron cluster
+mrtree_input_labels$leiden_clusters_0.0075[mrtree_input_labels$leiden_clusters_0.5 == "66"] = "1" # also move to neurons here
+mrtree_input_labels$leiden_clusters_0[mrtree_input_labels$leiden_clusters_0.5 == "66"] = "0" # also move to neurons here
+
+# pmch:
+mrtree_input_labels$leiden_clusters_0.05[mrtree_input_labels$leiden_clusters_0.5 == "56"] = "24" # make its own neuron cluster
+mrtree_input_labels$leiden_clusters_0.0075[mrtree_input_labels$leiden_clusters_0.5 == "56"] = "1" # also move to neurons here
+
+# hypendymal Wfdc2+
+mrtree_input_labels$leiden_clusters_0.5[mrtree_input_labels$leiden_clusters_6 == "199"] = "25" #
+mrtree_input_labels$leiden_clusters_0.05[mrtree_input_labels$leiden_clusters_6 == "199"] = "8" #
+mrtree_input_labels$leiden_clusters_0.0075[mrtree_input_labels$leiden_clusters_6 == "199"] = "3" #
 
 
 # strange immune cells to immune:
-mrtree_input_labels$leiden_clusters_0.05[mrtree_input_labels$leiden_clusters_0.5 == "60"] = "7"
+#mrtree_input_labels$leiden_clusters_0.05[mrtree_input_labels$leiden_clusters_0.5 == "60"] = "7"
 
-# strange immune cells to immune:
-mrtree_input_labels$leiden_clusters_0.05[mrtree_input_labels$leiden_clusters_0.5 == "60"] = "7"
+# # strange immune cells to immune:
+# mrtree_input_labels$leiden_clusters_0.05[mrtree_input_labels$leiden_clusters_0.5 == "60"] = "7"
 
+# check
+
+#a2= as.data.frame(table(curated_seurat_object@meta.data$Author_Class_Curated,curated_seurat_object@meta.data$leiden_clusters_6))
+#
+# a3= as.data.frame(table(curated_seurat_object@meta.data$leiden_clusters_0.0075,curated_seurat_object@meta.data$leiden_clusters_0.05))
 
 ##########
 ### Plot
@@ -133,11 +169,11 @@ curated_seurat_object@meta.data = curated_seurat_object@meta.data[,!grepl("leide
 #add
 curated_seurat_object@meta.data = cbind(curated_seurat_object@meta.data,mrtree_input_labels)
 
-p1 = DimPlot(curated_seurat_object,group.by = "leiden_clusters_0.5",raster = F,label=TRUE,label.size = 2)+NoLegend() #,label.size = 2
+p1 = DimPlot(curated_seurat_object,group.by = "leiden_clusters_0.5",raster = F,label=TRUE,label.size = 2.5)+NoLegend() #,label.size = 2
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 
-p1=FeaturePlot(curated_seurat_object,features = "Lhx9",raster = F,order=TRUE)
+p1=FeaturePlot(curated_seurat_object,features = "Wfdc2",raster = F,order=TRUE)
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 ##########
