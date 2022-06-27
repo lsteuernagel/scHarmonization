@@ -230,7 +230,7 @@ slurm_id_6b = stringr::str_remove(output_message,pattern = "Submitted batch job 
 ##########
 
 # load json file with all other information
-params_annotation= jsonlite::read_json("data/parameters_annotation_v2_1.json")
+params_annotation= jsonlite::read_json("data/parameters_annotation_v2_2.json")
 # if some fields are lists --> unlist
 params_annotation = lapply(params_annotation,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 

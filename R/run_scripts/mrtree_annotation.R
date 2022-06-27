@@ -60,7 +60,8 @@ message("Sibling markers for: ",length(unique(markers_comparisons_siblings$clust
 
 # load markers for exclusion ad further filter
 # load additional remove
-additional_remove_genes = unlist(jsonlite::read_json(unlist(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$marker_suffix,"_additionally_removed_markers.json"))))
+# parameter_list$marker_suffix,
+additional_remove_genes = unlist(jsonlite::read_json(unlist(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"raw","_additionally_removed_markers.json"))))
 # gather some other genes that are not informative during annoation:
 other_genes_remove = rownames(harmonized_seurat_object@assays$RNA@counts)[grepl("RP|Gm|Rik|-ps",rownames(harmonized_seurat_object@assays$RNA@counts))]
 # make list of all genes that should be removed:

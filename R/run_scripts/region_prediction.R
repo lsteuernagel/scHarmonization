@@ -60,7 +60,8 @@ message("All markers for: ",length(unique(markers_comparisons_all$cluster_id)),"
 ##########
 
 # load additional remove
-additional_remove_genes = jsonlite::read_json(unlist(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$marker_suffix,"_additionally_removed_markers.json")))
+#additional_remove_genes = jsonlite::read_json(unlist(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,parameter_list$marker_suffix,"_additionally_removed_markers.json")))
+additional_remove_genes = jsonlite::read_json(unlist(paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"raw","_additionally_removed_markers.json")))
 
 # which clusters are in cluster_column
 #cluster_column_ids = as.character(unique(curated_seurat_object@meta.data[,parameter_list$cluster_column]))

@@ -1,7 +1,7 @@
 
 
 
-parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_4.json")
+parameter_list = jsonlite::read_json("data/parameters_harmonization_v2_8.json")
 # if some fields are lists --> unlist
 parameter_list = lapply(parameter_list,function(x){if(is.list(x)){return(unlist(x))}else{return(x)}})
 parameter_list$marker_suffix = "pruned"
@@ -105,8 +105,8 @@ tree_data = suppressWarnings(tidytree::as.treedata(tree_data_tibble))
 # circular_tree
 
 label = "C180-140"#"K42-7"#"K160-112"
-id_offset = 1
-label_size =3
+id_offset = 1.5
+label_size =3.5
 # add selection
 tree_data_tibble$selected_edges = "not"
 all_selected_nodes = c(label,find_ancestors(label,edges[,c("from","to")]))
@@ -135,14 +135,15 @@ curated_seurat_object@meta.data = cbind(curated_seurat_object@meta.data,labelmat
 
 apply(labelmat,2,function(x){length(unique(x))})
 
-p1 = DimPlot(curated_seurat_object,group.by = "C63",raster = F,label=TRUE)+NoLegend()
+p1 = DimPlot(curated_seurat_object,group.by = "C185",raster = F,label=TRUE,label.size = 2.5,repel = TRUE)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
-cluster_column = "C180"
+cluster_column = "C286"
 set.seed(1234)
 curated_seurat_object@meta.data[,cluster_column] = factor(curated_seurat_object@meta.data[,cluster_column], levels = sample(unique(curated_seurat_object@meta.data[,cluster_column]),length(unique(curated_seurat_object@meta.data[,cluster_column]))))
-p1 = DimPlot(curated_seurat_object,group.by = cluster_column,raster = F,label=TRUE,label.size = 2)+NoLegend()
+p1 = DimPlot(curated_seurat_object,group.by = cluster_column,raster = F,label=TRUE,label.size = 2.5)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
+
 
 p1=FeaturePlot(curated_seurat_object,features = "Sst",raster = F,order=TRUE)
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
