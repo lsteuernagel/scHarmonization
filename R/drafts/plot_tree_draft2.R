@@ -138,14 +138,14 @@ apply(labelmat,2,function(x){length(unique(x))})
 p1 = DimPlot(curated_seurat_object,group.by = "C185",raster = F,label=TRUE,label.size = 2.5,repel = TRUE)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
-cluster_column = "C286"
+cluster_column = "C185"
 set.seed(1234)
 curated_seurat_object@meta.data[,cluster_column] = factor(curated_seurat_object@meta.data[,cluster_column], levels = sample(unique(curated_seurat_object@meta.data[,cluster_column]),length(unique(curated_seurat_object@meta.data[,cluster_column]))))
 p1 = DimPlot(curated_seurat_object,group.by = cluster_column,raster = F,label=TRUE,label.size = 2.5)+NoLegend()
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 
-p1=FeaturePlot(curated_seurat_object,features = "Sst",raster = F,order=TRUE)
+p1=FeaturePlot(curated_seurat_object,features = "Fam19a1",raster = F,order=TRUE)
 scUtils::rasterize_ggplot(p1,pixel_raster = 2048,pointsize = 1.8)
 
 a22 = CellSelector(p1)

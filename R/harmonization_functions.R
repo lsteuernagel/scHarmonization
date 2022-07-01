@@ -331,7 +331,7 @@ annotate_tree = function(edgelist,labelmat,markers_comparisons_all,markers_compa
 #' @param ... passed to detection functions
 #' @return updated vector of labels
 
-findMarkers_tree2 = function(seurat_object,edgelist,labelmat,n_cores=1,use_stratified=TRUE,test.use="wilcox-stratified",batch_var="Batch_ID",genes_to_include=NULL,assay="RNA",slot="data",...){
+findMarkers_tree2 = function(seurat_object,edgelist,labelmat,n_cores=1,use_stratified=TRUE,test.use="wilcox-stratified",batch_var="Batch_ID",latent_vars_seurat=NULL,genes_to_include=NULL,assay="RNA",slot="data",...){
 
   require(doParallel)
   require(tidyselect)
@@ -373,10 +373,10 @@ findMarkers_tree2 = function(seurat_object,edgelist,labelmat,n_cores=1,use_strat
   return_list=list()
   for(comp in comparison_types){
     if(comp == "Sibling"){
-      message("Sibling Comparisons")
+      message("Sibling Comparisons with ",test.use)
     }
     if(comp == "All"){
-      message("All Comparisons")
+      message("All Comparisons with ",test.use)
     }
     comparisons_main <- foreach(n = 1:length(all_nodes),.errorhandling = 'remove', .combine='rbind') %dopar% {
       current_node = all_nodes[n]
@@ -430,6 +430,7 @@ findMarkers_tree2 = function(seurat_object,edgelist,labelmat,n_cores=1,use_strat
                                               slot = assay_slot,
                                               test.use =test.use,
                                               min.pct = min.pct,
+                                              latent.vars = latent_vars_seurat,
                                               min.diff.pct = min.diff.pct,
                                               max.cells.per.ident=max.cells.per.ident,
                                               min.cells.feature = min.cells.feature,

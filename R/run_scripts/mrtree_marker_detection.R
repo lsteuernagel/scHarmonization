@@ -54,8 +54,18 @@ batch_var = parameter_list$batch_var
 test.use = parameter_list$test.use
 specificity_base = parameter_list$specificity_base
 message("test.use ",test.use," ... ",parameter_list$test.use)
-if(is.null(base)){base = 2}
+add_batch_as_latent = parameter_list$add_batch_as_latent
+additional_suffix = parameter_list$additional_suffix
 
+if(is.null(additional_suffix)){additional_suffix = ""}
+if(is.null(base)){base = 2}
+if(is.null(add_batch_as_latent)){add_batch_as_latent = FALSE}
+if(! test.use %in% c('negbinom', 'poisson', 'MAST', "LR") ){
+  add_batch_as_latent = FALSE
+}
+
+message("additional_suffix: ",additional_suffix)
+message("add_batch_as_latent: ",add_batch_as_latent)
 
 ##########
 ### Prepare edgelist and labelmat
@@ -108,6 +118,13 @@ genes_to_include = names(gene_sums)[gene_sums > min.cells.feature ]
 genes_to_include = genes_to_include[! genes_to_include %in% features_exclude_list]
 message("Testing ",length(genes_to_include)," genes as cluster markers")
 
+if(add_batch_as_latent){
+  latent_vars_seurat = batch_var
+  message("Adding batch_var: ",latent_vars_seurat," as latent var to Seurat based test.")
+}else{
+  latent_vars_seurat = NULL
+}
+
 # run marker detection on tree using findMarkers_tree2
 message(Sys.time(),": Start marker detection on mrtree" )
 all_markers_mrtree_list = findMarkers_tree2(harmonized_seurat_object,
@@ -116,7 +133,9 @@ all_markers_mrtree_list = findMarkers_tree2(harmonized_seurat_object,
                                             n_cores = n_cores_markers,
                                             assay=assay_markers,
                                             slot=assay_slot,
+                                            test.use = test.use,
                                             batch_var=batch_var,
+                                            latent_vars_seurat = latent_vars_seurat,
                                             genes_to_include = genes_to_include,
                                             logfc.threshold = logfc.threshold,
                                             min.pct = min.pct,
@@ -134,8 +153,8 @@ comparisons_siblings = as.data.frame(all_markers_mrtree_list$comparisons_Sibling
 comparisons_all = as.data.frame(all_markers_mrtree_list$comparisons_All)
 
 # save objects as txt#
-data.table::fwrite(comparisons_siblings,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$start_node,"_markers_siblings_",parameter_list$marker_suffix,".tsv"),sep="\t")
-data.table::fwrite(comparisons_all,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$start_node,"_markers_all_",parameter_list$marker_suffix,".tsv"),sep="\t")
+data.table::fwrite(comparisons_siblings,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$start_node,"_markers_siblings_",parameter_list$marker_suffix,"_",additional_suffix,".tsv"),sep="\t")
+data.table::fwrite(comparisons_all,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$start_node,"_markers_all_",parameter_list$marker_suffix,"_",additional_suffix,".tsv"),sep="\t")
 
 
 ## assumes base 2!
@@ -148,7 +167,7 @@ comparisons_all$specificity = ((comparisons_all$pct.1 + specificity_base) / (com
 ##########
 
 # save objects as txt
-data.table::fwrite(comparisons_siblings,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$start_node,"_markers_siblings_",parameter_list$marker_suffix,".tsv"),sep="\t")
-data.table::fwrite(comparisons_all,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$start_node,"_markers_all_",parameter_list$marker_suffix,".tsv"),sep="\t")
+data.table::fwrite(comparisons_siblings,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$start_node,"_markers_siblings_",parameter_list$marker_suffix,"_",additional_suffix,".tsv"),sep="\t")
+data.table::fwrite(comparisons_all,paste0(parameter_list$harmonization_folder_path,parameter_list$new_name_suffix,"_",parameter_list$start_node,"_markers_all_",parameter_list$marker_suffix,"_",additional_suffix,".tsv"),sep="\t")
 
 message(Sys.time(),": Finalized marker detection." )

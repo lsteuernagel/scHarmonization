@@ -224,6 +224,66 @@ dependency_ids = c(slurm_id_5)
 output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
 slurm_id_6b = stringr::str_remove(output_message,pattern = "Submitted batch job ")
 
+##########
+### [6c] Hierachical tree cluster markers re-run
+##########
+
+# TODO: only re run on clusters that actually changed ?
+
+# set params
+param_set = params_harmonization
+param_set$n_cores_markers = 4
+param_set$marker_suffix = "pruned"
+param_set$additional_suffix = "negbinom"
+param_set$test.use = "negbinom"
+param_set$start_node = "C2-1" # "all" for everything
+param_set$add_batch_as_latent = TRUE
+
+#param_set$marker_suffix = "nonneuron"
+# make unique id:
+job_id=digest::digest(param_set)
+# write to JSON as transfer file
+param_file = paste0(param_path,"mrtree_markers_params_",job_id,".json")
+writeList_to_JSON(list_with_rows = param_set,filename = param_file)
+# not a loop
+script_path = "R/run_scripts/mrtree_marker_detection.R"
+# set sbatch params:
+jobname = paste0("mrtree_markers_",job_id)
+outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
+errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
+dependency_ids = c(slurm_id_5)
+output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
+slurm_id_6c = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+
+##########
+### [6d] Hierachical tree cluster markers re-run
+##########
+
+# set params
+param_set = params_harmonization
+param_set$n_cores_markers = 4
+param_set$marker_suffix = "pruned"
+param_set$additional_suffix = "negbinom"
+param_set$test.use = "negbinom"
+param_set$start_node = "C2-2" # "all" for everything
+param_set$add_batch_as_latent = TRUE
+
+#param_set$marker_suffix = "nonneuron"
+# make unique id:
+job_id=digest::digest(param_set)
+# write to JSON as transfer file
+param_file = paste0(param_path,"mrtree_markers_params_",job_id,".json")
+writeList_to_JSON(list_with_rows = param_set,filename = param_file)
+# not a loop
+script_path = "R/run_scripts/mrtree_marker_detection.R"
+# set sbatch params:
+jobname = paste0("mrtree_markers_",job_id)
+outputfile = paste0(log_path,jobname,"_","slurm-%j.out")
+errorfile = paste0(log_path,jobname,"_","slurm-%j.err")
+dependency_ids = c(slurm_id_5)
+output_message = system(paste0("sbatch -J ",jobname," -o ",outputfile," -e ",errorfile," --dependency=afterok:",paste0(dependency_ids,collapse = ":")," --kill-on-invalid-dep=yes R/run_scripts/run_Rscript_slurm.sh ",singularity_path," ",script_path," ",param_file),intern = TRUE)
+slurm_id_6d = stringr::str_remove(output_message,pattern = "Submitted batch job ")
+
 
 ##########
 ### Read parameters for annotation
