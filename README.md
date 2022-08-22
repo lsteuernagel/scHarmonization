@@ -13,38 +13,52 @@ Harmonize annotations and other information for an integrated single cell datase
 6. (Not in slurm) Manually curate object by removing unwanted cells (e.g. additional Doublets clusters or low-quality cell clusters that only formed after integration ) and re-run SNN and UMAP.
 
 ## Advanced Harmonization
-1. Run leiden clustering over use-specified resolutions (wide range)
+1. Run leiden clustering over user-specified resolutions (wide range)
 2. (Not in slurm) Manual select a subset of cluster levels and export to a table.
 3. Construct mrtree on pre-selected clustering levels.
 4. Calculate marker genes
 5. TODO
 
-## Parameter overview
+## Pipeline
 
-TODO: explain major params
+This section includes explanations of the different scripts involved and should allow to reproduce the above steps.
 
-TODO: add json example
+- The pipeline requires a seurat object stored as an rds file that contains all Datasets/Batches that will be integrated and a metadata column specifying for each , a json with features to exclude from HVG search 
 
-### Old Step outline:
+- The parameters for the pipeline are stored in json format as well (see below).
 
-- Prepare input dataset (export to anndata etc.)
-- Run scVI to integrate the merged dataset using use-specfied parameters (use scIntegration to find a set of optimal parameters)
-- Create harmonized seurat
-  - Read results from scVI and create a new object
-  - Calculate a SNN (Seurat) on integrated result
-  - Run UMAP (and save model in object)
-- Run clustering on SNN of integrated result
-  - general option: run one round / repeat until a certain numer of clusters is reached
-  - [HypoMap]: Run multiple runs and combine to hierarchical tree using [mrtree](https://github.com/pengminshi/MRtree)
-- Run marker detection using batch-aware approach (optionally exclude features)
-  - [HypoMap]: Run marker detection to sibling clusters in hierarchical tree using batch-aware approach (optionally exclude features) 
-  - [HypoMap]: Prune clustering result based on markers to siblings (if no differences --> merge siblings)
-  - [HypoMap]: Re-Run marker detection on pruned clusters using batch-aware approach
-- Run [scMRMR](https://github.sf.mpg.de/lsteuernagel/scMRMR) to find a small set of descriptive markers for each cluster
-  - [HypoMap]: Run [scMRMR](https://github.sf.mpg.de/lsteuernagel/scMRMR) using a combination of global and siblings markers to obtain most informative genes
-  - [HypoMap]: Annotate clusters in hierarchical tree using most informative gene(s)
-- [HypoMap]: Run [scCoco](https://github.sf.mpg.de/lsteuernagel/scCoco) to infer likely locations of each cluster
-  - [HypoMap]: Combine with Dataset origin to prioritize voxels
-  - [HypoMap]:Break region annotation down to one most likely subregion/nucleus
-- Export final object
-  - [Manual]: Add a manual script for finalizing the object (e.g. pruning metadata etc.)
+- The main scripts are [R/executeIntegration.R] and [R/executeIntegration.R] to prepare the integration objects etc. and run the hyperparameter serach with scVI. See the script for detils on the slurm pipeline and which scripts are used for each of the steps outlined above.
+
+
+# Details & Parameters 
+
+## Prepare object
+
+The [run_script] takes the input seurat object and calculates highly variable genes etc. Then it saves the data as a h5 anndata object.
+Important parameters inlcude:
+
+-
+
+-
+
+## Run scvi
+
+The [run_script] python script executes scvi model setting and training to obtain the scvi integrated low dimensional representation. We are not using the corrected counts but do export them as well. The scvi hyperparameters can be used using default values or an "optimal" set can be searched for using [scIntegration]. 
+Important parameters (mostly scvi hyperparameters (see also documentation:)):
+-
+-
+
+## Integrated Seurat object
+
+Using the [mmm] script, the scvi results are added to the merged seurat and uing Seurat's FindNeighbors and RunUMAP a SNN graph and a UMAP based on the integrated embedding are calculated.
+Important parameters:
+
+## Inital clustering:
+
+Using the python script [nnn] the integrated data is clustered into a set of preliminary clusters that can be used for inital data exploration ( when only running the first prt of the pipeline this can also be used as the main clustering). 
+Important parameters :
+- nClustrers: How many clusters are expected by the user (will increase resolution until this is met.)
+- ....
+
+**TBC**
+
