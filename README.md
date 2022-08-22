@@ -33,13 +33,13 @@ This section includes explanations of the different scripts involved and should 
 
 - The parameters for the pipeline are stored in json format as well (see below).
 
-- The main scripts are [R/execute_scHarmonization_basic.R] and [R/execute_scHarmonization_advanced.R ] to prepare the integration objects etc. and run the hyperparameter serach with scVI. See the script for detils on the slurm pipeline and which scripts are used for each of the steps outlined above.
+- The main scripts are [R/execute_scHarmonization_basic.R](R/execute_scHarmonization_basic.R) and [R/execute_scHarmonization_advanced.R](R/execute_scHarmonization_advanced.R) to prepare the integration objects etc. and run the hyperparameter serach with scVI. See the script for detils on the slurm pipeline and which scripts are used for each of the steps outlined above.
 
-# Details & Parameters 
+# Details: Basic harmonization: 
 
 ## Prepare object
 
-The [R/run_scripts/prepare_harmonization.R] takes the input seurat object and calculates highly variable genes etc. Then it saves the data as an h5 anndata object.
+The [R/run_scripts/prepare_harmonization.R](R/run_scripts/prepare_harmonization.R) takes the input seurat object and calculates highly variable genes etc. Then it saves the data as an h5 anndata object.
 Important parameters include:
 
 - **feature_set_size** : A vector of different sizes for HVGs
@@ -48,32 +48,34 @@ Important parameters include:
 
 ## Run scvi
 
-The [python/integrate_scVI_v015.py] python script executes scvi model setting and training to obtain the scvi integrated low dimensional representation. We are not using the corrected counts but do export them as well. The scvi hyperparameters can be used using default values or an "optimal" set can be searched for using [scIntegration](LINK). 
+The (python/integrate_scVI_v015.py) python script executes scvi model setting and training to obtain the scvi integrated low dimensional representation. We are not using the corrected counts but do export them as well. The scvi hyperparameters can be used using default values or an "optimal" set can be searched for using [scIntegration](LINK). 
 Important parameters (mostly scvi hyperparameters (see also documentation:)):
--
--
+- ....
 
 ## Integrated Seurat object
 
-Using the [R/run_scripts/basic_harmonization.R] script, the scvi results are added to the merged seurat and uing Seurat's FindNeighbors and RunUMAP a SNN graph and a UMAP based on the integrated embedding are calculated.
+Using the [R/run_scripts/basic_harmonization.R](R/run_scripts/basic_harmonization.R) script, the scvi results are added to the merged seurat and uing Seurat's FindNeighbors and RunUMAP a SNN graph and a UMAP based on the integrated embedding are calculated.
 Important parameters:
--
--
+- ....
 
 ## Inital clustering:
 
-Using the python script [python/basic_leiden_clustering.py] the integrated data is clustered into a set of preliminary clusters that can be used for inital data exploration ( when only running the first prt of the pipeline this can also be used as the main clustering). 
+Using the python script [python/basic_leiden_clustering.py](python/basic_leiden_clustering.py) the integrated data is clustered into a set of preliminary clusters that can be used for inital data exploration ( when only running the first prt of the pipeline this can also be used as the main clustering). 
 Important parameters :
 - nClustrers: How many clusters are expected by the user (will increase resolution until this is met.)
 - ....
 
 ## Inital marker detection:
 
-Using the [R/run_scripts/basic_marker_detection.R] script, markers for each of the abve clusters are detected.
+Using the [R/run_scripts/basic_marker_detection.R](R/run_scripts/basic_marker_detection.R) script, markers for each of the abve clusters are detected.
 Important parameters :
 - nClustrers: How many clusters are expected by the user (will increase resolution until this is met.)
 - ....
 
+## Manual curation based on inital harmonization
+
+This is done by the user. See [curate_hypoMap_2.R ](curate_hypoMap_2.R ) for the HypoMap version.
 
 
+# Details: Advanced harmonization: 
 
