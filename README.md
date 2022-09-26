@@ -4,7 +4,7 @@ Harmonize annotations and other information for an integrated single cell datase
 # Overview
 
 The basic harmonization can be used as a straightforward approach to creating integrated single-cell datasets using a mix of scvi, seurat and scanpy solutions in a slurm workflow for HPCs.
-The core scvi model is relatively robust with default parameters. For specific projects like [HypoMap](LINK) the [scIntegration](LINK) pipeline can be used to evalute hyperparameters. 
+The core scvi model is relatively robust with default parameters. For specific projects like [HypoMap](https://www.repository.cam.ac.uk/handle/1810/340518) the [scIntegration](https://github.com/lsteuernagel/scIntegration) pipeline can be used to evalute hyperparameters. 
 
 The second part of the pipeline is used to add additional detailed annotations (optimized clustering, naming, brain region prediction) and is mostly optimized towards the HypoMap project but can be adapted for other projects as well.
 
